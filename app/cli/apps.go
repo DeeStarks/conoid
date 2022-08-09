@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DeeStarks/conoid/utils"
+	"github.com/DeeStarks/conoid/domain/ports"
 	"github.com/aquasecurity/table"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -36,39 +37,8 @@ type AppProcess struct {
 
 // List running applications
 func (ac *AppCommand) ListRunning() {
-	rows, err := ac.defaultDB.Query(`
-	SELECT 
-		pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
-	FROM processes WHERE status="running"
-	`)
-	if err != nil {
-		log.Println("Error retrieving running apps:", err)
-		return
-	}
-
-	// Parse result
-	var processes []AppProcess
-	for rows.Next() {
-		var process AppProcess
-		var listeners string
-
-		err = rows.Scan(
-			&process.Pid, &process.Name, &process.Status, &process.Type,
-			&listeners, &process.RootDirectory, &process.ClientAddress,
-			&process.Tunnelled, &process.CreatedAt,
-		)
-		if err != nil {
-			log.Println("Error retrieving running apps:", err)
-			return
-		}
-
-		// Listeners are stored in the db a string separated by comma
-		// we'll split that into slice
-		process.Listeners = strings.Split(listeners, ",")
-		// Append the process to list of processes
-		processes = append(processes, process)
-	}
+	domainPort := port.NewDomainPort(ac.defaultDB)
+	processes := domainPort.AppProcesses().RetrieveRunning()
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
@@ -94,39 +64,8 @@ func (ac *AppCommand) ListRunning() {
 
 // List all applications
 func (ac *AppCommand) ListAll() {
-	rows, err := ac.defaultDB.Query(`
-	SELECT 
-		pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
-	FROM processes
-	`)
-	if err != nil {
-		log.Println("Error retrieving running apps:", err)
-		return
-	}
-
-	// Parse result
-	var processes []AppProcess
-	for rows.Next() {
-		var process AppProcess
-		var listeners string
-
-		err = rows.Scan(
-			&process.Pid, &process.Name, &process.Status, &process.Type,
-			&listeners, &process.RootDirectory, &process.ClientAddress,
-			&process.Tunnelled, &process.CreatedAt,
-		)
-		if err != nil {
-			log.Println("Error retrieving running apps:", err)
-			return
-		}
-
-		// Listeners are stored in the db a string separated by comma
-		// we'll split that into slice
-		process.Listeners = strings.Split(listeners, ",")
-		// Append the process to list of processes
-		processes = append(processes, process)
-	}
+	domainPort := port.NewDomainPort(ac.defaultDB)
+	processes := domainPort.AppProcesses().RetrieveAll()
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
