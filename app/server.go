@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/DeeStarks/conoid/app/tools"
 	"github.com/DeeStarks/conoid/config"
 )
 
@@ -23,14 +24,19 @@ func NewServer() *Server {
 }
 
 func (s *Server) process(conn net.Conn) {
-	// Get the local port number of the server serving the remote client
+	// Get the servers
 	addrs := s.apps.GetAppServers(conn.RemoteAddr().String())
 	if len(addrs) <= 0 {
 		// If the remote address is unknown, redirect to the welcome server
 		addrs = s.apps.GetAppServers("[::1]:80")
 	}
+
+	// Get next server from load balancer
+	lb := tools.NewLoadBalancer(addrs)
+	addr := lb.GetNextServer()
+
 	// Connect to the available server
-	localConn, err := s.apps.ConnectToServer(addrs[0])
+	localConn, err := s.apps.ConnectToServer(addr)
 	if err != nil {
 		log.Println(err)
 		return
@@ -74,6 +80,7 @@ func (s *Server) Serve() {
 			log.Println("Connection failed:", err)
 			continue
 		}
+		log.Println("Connected")
 
 		// Handle connection in a new goroutine
 		go s.process(conn)
