@@ -8,12 +8,12 @@ import (
 )
 
 type AppConf struct {
-	Name          string   `yaml:"name"`     // Name of application
-	Renderer      string   `yaml:"renderer"` // "server" or "static"
-	Servers       []string `yaml:"servers"`  // Load will be automatically balanced across servers. Required if "Renderer" is "server"
-	RootDirectory string   `yaml:"root"`     // Path to root directory. Required for "static" rendering
-	ClientAddr    string   `yaml:"client"`   // Client address
-	Tunnel        bool     `yaml:"tunnel"`   // Auto-share service to a remote network. This will be redundant if the "RemoteClient" is set
+	Name          string   `yaml:"name"`      // Name of application
+	Type          string   `yaml:"type"`      // "server" or "static"
+	Listeners     []string `yaml:"listeners"` // Load will be automatically balanced across listners. Required if "Renderer" is "server"
+	RootDirectory string   `yaml:"root"`      // Path to root directory. Required for "static" rendering
+	ClientAddr    string   `yaml:"client"`    // Client address
+	Tunnelled     bool     `yaml:"tunnelled"` // Share service to a remote network. This will be redundant if the "ClientAddr" is set
 }
 
 // Deserialize app yaml file
