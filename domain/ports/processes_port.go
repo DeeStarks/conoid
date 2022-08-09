@@ -7,6 +7,7 @@ import (
 type ProcessesPort interface {
 	RetrieveRunning() ([]repository.AppProcessModel, error)
 	RetrieveAll() ([]repository.AppProcessModel, error)
+	Create(map[string]interface{}) (repository.AppProcessModel, error)
 }
 
 func (p DomainPort) AppProcesses() ProcessesPort {
