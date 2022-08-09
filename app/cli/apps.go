@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DeeStarks/conoid/utils"
 	"github.com/DeeStarks/conoid/domain/ports"
+	"github.com/DeeStarks/conoid/utils"
 	"github.com/aquasecurity/table"
 	_ "github.com/mattn/go-sqlite3"
 )

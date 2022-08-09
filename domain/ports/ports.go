@@ -2,12 +2,10 @@ package port
 
 import (
 	"database/sql"
-
-	"github.com/DeeStarks/conoid/domain/repository"
 )
 
 type IDomainPort interface {
-	AppProcesses() repository.AppProcess
+	AppProcesses() ProcessesPort
 }
 
 type DomainPort struct {
