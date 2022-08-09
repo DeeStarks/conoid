@@ -1,19 +1,21 @@
 package utils
 
 import (
+	"errors"
 	"log"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type AppConf struct {
-	Name          string   `yaml:"name"`      // Name of application
-	Type          string   `yaml:"type"`      // "server" or "static"
-	Listeners     []string `yaml:"listeners"` // Load will be automatically balanced across listners. Required if "Renderer" is "server"
-	RootDirectory string   `yaml:"root"`      // Path to root directory. Required for "static" rendering
-	ClientAddr    string   `yaml:"client"`    // Client address
-	Tunnelled     bool     `yaml:"tunnelled"` // Share service to a remote network. This will be redundant if the "ClientAddr" is set
+	Name          string   `yaml:"name" json:"name"`             // Name of application
+	Type          string   `yaml:"type" json:"type"`             // "server" or "static"
+	Listeners     []string `yaml:"listeners" json:"listeners,omitempty"`   // Load will be automatically balanced across listners. Required if "Renderer" is "server"
+	RootDirectory string   `yaml:"root" json:"root_directory,omitempty"`   // Path to root directory. Required for "static" rendering
+	ClientAddr    string   `yaml:"client" json:"client_address,omitempty"` // Client address
+	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`   // Share service to a remote network. This will be redundant if the "ClientAddr" is set
 }
 
 // Deserialize app yaml file
@@ -32,6 +34,43 @@ func DeserializeAppYAML(file *os.File) (AppConf, error) {
 	err = yaml.Unmarshal(buf[:n], &conf)
 	if err != nil {
 		log.Println("Error deserializing configuration file:", err)
+	}
+	return conf, nil
+}
+
+// Validate and fix errors in configuration
+func ValidateConf(conf AppConf) (AppConf, error) {
+	// Set name to lowercase letters
+	conf.Name = strings.ToLower(conf.Name)
+
+	// Validate type
+	conf.Type = strings.ToLower(conf.Type)
+	if conf.Type != "server" && conf.Type != "static" {
+		return AppConf{}, errors.New("expected type of \"server\" or \"static\"")
+	}
+
+	if conf.Type == "server" {
+		if len(conf.Listeners) == 0 {
+			return AppConf{}, errors.New("type of \"server\" requires at least a \"listener\" or a server address")
+		}
+
+		// Set the static root as empty
+		conf.RootDirectory = ""
+	}
+
+	// RootDirectory
+	if conf.Type == "static" {
+		if conf.RootDirectory == "" {
+			return AppConf{}, errors.New("expected \"root\" directory for a \"static\" type")
+		}
+
+		// Empty listeners
+		conf.Listeners = []string{}
+	}
+
+	// Set "Tunnelled" to false if "ClientAddr" is passed
+	if len(conf.ClientAddr) > 0 {
+		conf.Tunnelled = false
 	}
 	return conf, nil
 }
