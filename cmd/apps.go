@@ -56,7 +56,7 @@ var (
 func init() {
 	// appCmd
 	rootCmd.AddCommand(appCmd)
-	appCmd.Flags().StringP("add", "a", "", "add new application. Pass application's root directory")
+	appCmd.Flags().StringP("add", "a", "", "add new application. Pass directory where \"conoid.yml\" file is located")
 
 	// appPsCmd
 	appCmd.AddCommand(appPsCmd)

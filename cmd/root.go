@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/DeeStarks/conoid/app"
 	"github.com/DeeStarks/conoid/config"
@@ -17,7 +16,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			// Print version
 			if v, _ := cmd.Flags().GetBool("version"); v {
-				log.Println(config.VERSION)
+				fmt.Println(config.VERSION)
 				return
 			}
 
@@ -33,7 +32,7 @@ var (
 		Short: "Print the version number of Conoid",
 		Long:  `All software has versions. This is Conoid's`,
 		Run: func(cmd *cobra.Command, args []string) {
-			log.Println(config.VERSION)
+			fmt.Println(config.VERSION)
 		},
 	}
 )
