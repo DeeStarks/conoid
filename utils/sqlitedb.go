@@ -2,7 +2,9 @@ package utils
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -34,4 +36,13 @@ func Sqlite3Migrate(pathToDB, pathToSchema string) error {
 		return err
 	}
 	return nil
+}
+
+// -> $1, $2...$n
+func GeneratePlaceholders(n int) string {
+	holders := make([]string, n)
+	for i := 0; i < n; i++ {
+		holders[i] = fmt.Sprintf("$%d", i+1)
+	}
+	return strings.Join(holders, ", ")
 }
