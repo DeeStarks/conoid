@@ -8,9 +8,9 @@ import (
 
 func TestLoadBalancer(t *testing.T) {
 	var servers = []string{"google.com", "localhost", "stackoverflow.com", "yahoo.com"}
-	var tests = []struct{
+	var tests = []struct {
 		expected string
-	} {
+	}{
 		{
 			expected: "google.com",
 		},

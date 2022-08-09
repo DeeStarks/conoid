@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -8,18 +9,28 @@ import (
 
 	"github.com/DeeStarks/conoid/app/tools"
 	"github.com/DeeStarks/conoid/config"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Server struct {
-	apps IApplications
+	apps      IApplications
+	defaultDB *sql.DB
 }
 
 func NewServer() *Server {
-	apps := InitApplications() // initialize applications
-	apps.RegisterApps()        // Register all apps
+	// Connect to the default db
+	defaultDB, err := sql.Open("sqlite3", config.DEFAULT_DB)
+	if err != nil {
+		log.Panicln("Could not connect DB:", err)
+	}
+
+	// initialize and start running applications
+	apps := InitApplications(defaultDB)
+	apps.ServeApps()
 
 	return &Server{
-		apps: apps,
+		apps:      apps,
+		defaultDB: defaultDB,
 	}
 }
 

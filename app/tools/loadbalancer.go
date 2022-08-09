@@ -5,14 +5,14 @@ type ILoadBalancer interface {
 }
 
 type LoadBalancer struct {
-	srvs []string // Servers to balaance load across
-	roundRobin	int
+	srvs       []string // Servers to balaance load across
+	roundRobin int
 }
 
 // Creates a new instance of load balancer
 func NewLoadBalancer(srvs []string) ILoadBalancer {
 	return &LoadBalancer{
-		srvs: srvs,
+		srvs:       srvs,
 		roundRobin: 0,
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,12 +13,13 @@ type (
 	RunningApps map[string][]string
 
 	Applications struct {
-		running RunningApps
-		nextPN  int // Next available port number
+		running   RunningApps
+		nextPN    int // Next available port number
+		defaultDB *sql.DB
 	}
 
 	IApplications interface {
-		RegisterApps()                            // Retrieve all applications and serve
+		ServeApps()                               // Retrieve all applications and serve
 		GetRunningApps() RunningApps              // Get all running applications
 		GetAppServers(string) []string            // Get all servers' address that an application runs on
 		ConnectToServer(string) (net.Conn, error) // Connect to an application running locally
@@ -25,15 +27,16 @@ type (
 	}
 )
 
-func InitApplications() IApplications {
+func InitApplications(defaultDB *sql.DB) IApplications {
 	return &Applications{
-		running: RunningApps{},
-		nextPN:  12000, // New servers will listen on port number :12000 and above
+		running:   RunningApps{},
+		nextPN:    12000, // New servers will listen on port number :12000 and above for static apps
+		defaultDB: defaultDB,
 	}
 }
 
 // Retrieve all applications and serve
-func (a *Applications) RegisterApps() {
+func (a *Applications) ServeApps() {
 	// Serve the welcome page
 	welcomePort := a.ServeStatic("./assets/welcome/")
 	// We'll view the welcome page on the default port :80
