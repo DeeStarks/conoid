@@ -5,8 +5,8 @@ import (
 )
 
 type ProcessesPort interface {
-	RetrieveRunning() []repository.AppProcessModel
-	RetrieveAll() []repository.AppProcessModel
+	RetrieveRunning() ([]repository.AppProcessModel, error)
+	RetrieveAll() ([]repository.AppProcessModel, error)
 }
 
 func (p DomainPort) AppProcesses() ProcessesPort {

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"log"
 	"strings"
 )
 
@@ -23,7 +22,7 @@ type AppProcess struct {
 }
 
 // Retrive all running services
-func (p AppProcess) RetrieveRunning() []AppProcessModel {
+func (p AppProcess) RetrieveRunning() ([]AppProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
@@ -31,8 +30,7 @@ func (p AppProcess) RetrieveRunning() []AppProcessModel {
 	FROM processes WHERE status="running"
 	`)
 	if err != nil {
-		log.Println("Error retrieving running apps:", err)
-		return nil
+		return nil, err
 	}
 
 	// Parse result
@@ -47,8 +45,7 @@ func (p AppProcess) RetrieveRunning() []AppProcessModel {
 			&process.Tunnelled, &process.CreatedAt,
 		)
 		if err != nil {
-			log.Println("Error retrieving running services:", err)
-			return nil
+			return nil, err
 		}
 
 		// Listeners are stored in the db as strings separated by comma
@@ -57,11 +54,11 @@ func (p AppProcess) RetrieveRunning() []AppProcessModel {
 		// Append the process to list of processes
 		processes = append(processes, process)
 	}
-	return processes
+	return processes, nil
 }
 
 // Retrive all services
-func (p AppProcess) RetrieveAll() []AppProcessModel {
+func (p AppProcess) RetrieveAll() ([]AppProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
@@ -69,8 +66,7 @@ func (p AppProcess) RetrieveAll() []AppProcessModel {
 	FROM processes
 	`)
 	if err != nil {
-		log.Println("Error retrieving services:", err)
-		return nil
+		return nil, err
 	}
 
 	// Parse result
@@ -85,8 +81,7 @@ func (p AppProcess) RetrieveAll() []AppProcessModel {
 			&process.Tunnelled, &process.CreatedAt,
 		)
 		if err != nil {
-			log.Println("Error retrieving running apps:", err)
-			return nil
+			return nil, err
 		}
 
 		// Listeners are stored in the db as strings separated by comma
@@ -95,5 +90,5 @@ func (p AppProcess) RetrieveAll() []AppProcessModel {
 		// Append the process to list of processes
 		processes = append(processes, process)
 	}
-	return processes
+	return processes, nil
 }

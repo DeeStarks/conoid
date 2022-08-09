@@ -2,7 +2,7 @@ package cli
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -10,7 +10,6 @@ import (
 	"github.com/DeeStarks/conoid/domain/ports"
 	"github.com/DeeStarks/conoid/utils"
 	"github.com/aquasecurity/table"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type AppCommand struct {
@@ -38,7 +37,11 @@ type AppProcess struct {
 // List running applications
 func (ac *AppCommand) ListRunning() {
 	domainPort := port.NewDomainPort(ac.defaultDB)
-	processes := domainPort.AppProcesses().RetrieveRunning()
+	processes, err := domainPort.AppProcesses().RetrieveRunning()
+	if err != nil {
+		fmt.Println("Error retrieve running apps:", err)
+		return
+	}
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
@@ -65,7 +68,11 @@ func (ac *AppCommand) ListRunning() {
 // List all applications
 func (ac *AppCommand) ListAll() {
 	domainPort := port.NewDomainPort(ac.defaultDB)
-	processes := domainPort.AppProcesses().RetrieveAll()
+	processes, err := domainPort.AppProcesses().RetrieveAll()
+	if err != nil {
+		fmt.Println("Error retrieve apps:", err)
+		return
+	}
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
@@ -93,14 +100,22 @@ func (ac *AppCommand) Add(filepath string) {
 	// Ensure the file exists
 	f, err := os.Open(filepath)
 	if err != nil {
-		log.Println("Could not add new app; \"conoid.yml\": File not found")
+		fmt.Println("Could not add new app; \"conoid.yml\": File not found")
 		return
 	}
 	defer f.Close()
 
 	conf, err := utils.DeserializeAppYAML(f)
 	if err != nil {
-		log.Println("Error deserializing configuration file:", err)
+		fmt.Println("Error deserializing configuration file:", err)
+		return
 	}
-	log.Println(conf)
+	
+	// Vallidate configuration
+	validatedConf, err := utils.ValidateConf(conf)
+	if err != nil {
+		fmt.Println("Invalid configuration file:", err)
+		return
+	}
+	fmt.Println(validatedConf)
 }
