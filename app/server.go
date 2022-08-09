@@ -13,7 +13,7 @@ import (
 )
 
 type Server struct {
-	apps      IApplications
+	apps      IServices
 	defaultDB *sql.DB
 }
 
@@ -24,9 +24,9 @@ func NewServer() *Server {
 		log.Panicln("Could not connect DB:", err)
 	}
 
-	// initialize and start running applications
-	apps := InitApplications(defaultDB)
-	apps.ServeApps()
+	// initialize and start running Services
+	apps := InitServices(defaultDB)
+	apps.ServeServices()
 
 	return &Server{
 		apps:      apps,
@@ -36,10 +36,10 @@ func NewServer() *Server {
 
 func (s *Server) process(conn net.Conn) {
 	// Get the servers
-	addrs := s.apps.GetAppServers(conn.RemoteAddr().String())
+	addrs := s.apps.GetServiceServers(conn.RemoteAddr().String())
 	if len(addrs) <= 0 {
 		// If the remote address is unknown, redirect to the welcome server
-		addrs = s.apps.GetAppServers("[::1]:80")
+		addrs = s.apps.GetServiceServers("[::1]:80")
 	}
 
 	// Get next server from load balancer

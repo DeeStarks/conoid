@@ -9,7 +9,7 @@ import (
 )
 
 type ICLICommands interface {
-	Apps() *AppCommand
+	Services() *ServiceCommand
 }
 
 type CLICommands struct {

@@ -8,23 +8,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DeeStarks/conoid/domain/ports"
+	port "github.com/DeeStarks/conoid/domain/ports"
 	"github.com/DeeStarks/conoid/utils"
 	"github.com/aquasecurity/table"
 	"github.com/google/uuid"
 )
 
-type AppCommand struct {
+type ServiceCommand struct {
 	defaultDB *sql.DB
 }
 
-func (cmd *CLICommands) Apps() *AppCommand {
-	return &AppCommand{
+func (cmd *CLICommands) Services() *ServiceCommand {
+	return &ServiceCommand{
 		defaultDB: cmd.defaultDB,
 	}
 }
 
-type AppProcess struct {
+type ServiceProcess struct {
 	Pid           string
 	Name          string
 	Status        string
@@ -36,12 +36,12 @@ type AppProcess struct {
 	CreatedAt     int64
 }
 
-// List running applications
-func (ac *AppCommand) ListRunning() {
+// List running services
+func (ac *ServiceCommand) ListRunning() {
 	domainPort := port.NewDomainPort(ac.defaultDB)
-	processes, err := domainPort.AppProcesses().RetrieveRunning()
+	processes, err := domainPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
-		fmt.Println("Error retrieve running apps:", err)
+		fmt.Println("Error retrieve running services:", err)
 		return
 	}
 
@@ -69,12 +69,12 @@ func (ac *AppCommand) ListRunning() {
 
 }
 
-// List all applications
-func (ac *AppCommand) ListAll() {
+// List all services
+func (ac *ServiceCommand) ListAll() {
 	domainPort := port.NewDomainPort(ac.defaultDB)
-	processes, err := domainPort.AppProcesses().RetrieveAll()
+	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
-		fmt.Println("Error retrieving apps:", err)
+		fmt.Println("Error retrieving services:", err)
 		return
 	}
 
@@ -105,17 +105,17 @@ func (ac *AppCommand) ListAll() {
 	t.Render()
 }
 
-// Add new application
-func (ac *AppCommand) Add(filepath string) {
+// Add new service
+func (ac *ServiceCommand) Add(filepath string) {
 	// Ensure the file exists
 	f, err := os.Open(filepath)
 	if err != nil {
-		fmt.Println("Could not add new app; \"conoid.yml\": File not found")
+		fmt.Println("Could not add new service; \"conoid.yml\": File not found")
 		return
 	}
 	defer f.Close()
 
-	conf, err := utils.DeserializeAppYAML(f)
+	conf, err := utils.DeserializeConf(f)
 	if err != nil {
 		fmt.Println("Error deserializing configuration file:", err)
 		return
@@ -128,18 +128,18 @@ func (ac *AppCommand) Add(filepath string) {
 		return
 	}
 
-	// Ensure app doesn't already exist
+	// Ensure service doesn't already exist
 	domainPort := port.NewDomainPort(ac.defaultDB)
-	processes, err := domainPort.AppProcesses().RetrieveAll()
+	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
-		fmt.Println("Could not add app:", err)
+		fmt.Println("Could not add service:", err)
 		return
 	}
 
 	// Check processes' names
 	for _, p := range processes {
 		if p.Name == validatedConf.Name {
-			fmt.Printf("Could not add app: an app with name \"%s\" already exists\n", validatedConf.Name)
+			fmt.Printf("Could not add service: an service with name \"%s\" already exists\n", validatedConf.Name)
 			return
 		}
 	}
@@ -148,7 +148,7 @@ func (ac *AppCommand) Add(filepath string) {
 	// First, to json
 	jsondata, err := json.Marshal(validatedConf)
 	if err != nil {
-		fmt.Println("Could not add app:", err)
+		fmt.Println("Could not add service:", err)
 		return
 	}
 	// Now, to map
@@ -175,11 +175,11 @@ func (ac *AppCommand) Add(filepath string) {
 	mapConf["pid"] = strings.ReplaceAll(uuid.New().String(), "-", "") // Stripping hyphens
 	mapConf["status"] = 1
 	mapConf["created_at"] = time.Now().Unix()
-	
-	_, err = domainPort.AppProcesses().Create(mapConf)
+
+	_, err = domainPort.ServiceProcesses().Create(mapConf)
 	if err != nil {
-		fmt.Println("Could not add app:", err)
+		fmt.Println("Could not add service:", err)
 		return
 	}
-	fmt.Println("Your app was successfully added. Restart conoid to start accepting request")
+	fmt.Println("Your service was successfully added. Restart conoid to start accepting request")
 }
