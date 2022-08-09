@@ -16,19 +16,19 @@ const (
 var (
 	// File System
 	FS_ROOT    string
-	PROCESS_DB string // DB for app processes
+	DEFAULT_DB string // Database to use by default
 )
 
 func init() {
 	switch runtime.GOOS {
 	case "windows":
 		FS_ROOT = os.ExpandEnv(`C:\Program Files\Conoid\`)
-		PROCESS_DB = FS_ROOT + `AppProcesses.db`
+		DEFAULT_DB = FS_ROOT + `Default.db`
 	case "darwin":
 		FS_ROOT = os.ExpandEnv(`$HOME/Library/Conoid/`)
-		PROCESS_DB = FS_ROOT + `AppProcesses.db`
+		DEFAULT_DB = FS_ROOT + `Default.db`
 	default:
 		FS_ROOT = os.ExpandEnv(`/var/lib/conoid/`)
-		PROCESS_DB = FS_ROOT + `app_processes.db`
+		DEFAULT_DB = FS_ROOT + `default.db`
 	}
 }

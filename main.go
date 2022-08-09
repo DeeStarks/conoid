@@ -6,10 +6,12 @@ import (
 
 	"github.com/DeeStarks/conoid/cmd"
 	"github.com/DeeStarks/conoid/config"
+	"github.com/DeeStarks/conoid/utils"
 )
 
-// Setup filesystem during new installation
-func SetupFs() {
+// Create and setup dependencies
+func SetupDeps() {
+	// 1. Setup the data root directory
 	if _, err := os.Stat(config.FS_ROOT); os.IsNotExist(err) {
 		err := os.Mkdir(config.FS_ROOT, os.ModePerm)
 		if err != nil {
@@ -18,23 +20,28 @@ func SetupFs() {
 		}
 	}
 
-	// Create dependency files
-	depFiles := []string{
-		config.PROCESS_DB,
-	}
-	for _, dep := range depFiles {
-		f, err := os.OpenFile(dep, os.O_RDONLY|os.O_CREATE, 0644)
+	// 2. Create the default database
+	if _, err := os.Stat(config.DEFAULT_DB); os.IsNotExist(err) {
+		// Create if id does not exist
+		f, err := os.OpenFile(config.DEFAULT_DB, os.O_CREATE, 0644)
 		if err != nil {
-			log.Printf("Error creating dependency file: %s; Error: %v\n", dep, err)
+			log.Printf("Error creating file: %s; Error: %v\n", config.DEFAULT_DB, err)
 			return
 		}
 		f.Close()
+
+		// Migrate schemadb
+		err = utils.Sqlite3Migrate(config.DEFAULT_DB, "./domain/schemas/default.sql")
+		if err != nil {
+			log.Println("Error migrating schema:", err)
+			return
+		}
 	}
 }
 
 func main() {
-	// Setup filesystem
-	SetupFs()
+	// Setup dependencies during installation
+	SetupDeps()
 
 	// Start process based on command argument
 	cmd.Execute()
