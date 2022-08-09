@@ -46,3 +46,12 @@ func GeneratePlaceholders(n int) string {
 	}
 	return strings.Join(holders, ", ")
 }
+
+// -> id = $1...
+func GenerateSetConditions(keys []string) string {
+	conditions := make([]string, len(keys))
+	for i, k := range keys {
+		conditions[i] = fmt.Sprintf("%s = $%d", k, i+1)
+	}
+	return strings.Join(conditions, ", ")
+}
