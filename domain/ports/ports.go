@@ -5,7 +5,7 @@ import (
 )
 
 type IDomainPort interface {
-	AppProcesses() ProcessesPort
+	ServiceProcesses() ProcessesPort
 }
 
 type DomainPort struct {

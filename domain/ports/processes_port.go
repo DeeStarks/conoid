@@ -5,13 +5,14 @@ import (
 )
 
 type ProcessesPort interface {
-	RetrieveRunning() ([]repository.AppProcessModel, error)
-	RetrieveAll() ([]repository.AppProcessModel, error)
-	Create(map[string]interface{}) (repository.AppProcessModel, error)
+	RetrieveRunning() ([]repository.ServiceProcessModel, error)
+	RetrieveAll() ([]repository.ServiceProcessModel, error)
+	Create(map[string]interface{}) (repository.ServiceProcessModel, error)
+	Update(string, map[string]interface{}) (repository.ServiceProcessModel, error)
 }
 
-func (p DomainPort) AppProcesses() ProcessesPort {
-	return repository.AppProcess{
+func (p DomainPort) ServiceProcesses() ProcessesPort {
+	return repository.ServiceProcess{
 		DB: p.db,
 	}
 }

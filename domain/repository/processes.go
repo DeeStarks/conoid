@@ -9,7 +9,7 @@ import (
 	"github.com/DeeStarks/conoid/utils"
 )
 
-type AppProcessModel struct {
+type ServiceProcessModel struct {
 	Pid           string
 	Name          string
 	Status        bool
@@ -21,12 +21,12 @@ type AppProcessModel struct {
 	CreatedAt     int64
 }
 
-type AppProcess struct {
+type ServiceProcess struct {
 	DB *sql.DB
 }
 
 // Retrive all running services
-func (p AppProcess) RetrieveRunning() ([]AppProcessModel, error) {
+func (p ServiceProcess) RetrieveRunning() ([]ServiceProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
@@ -38,9 +38,9 @@ func (p AppProcess) RetrieveRunning() ([]AppProcessModel, error) {
 	}
 
 	// Parse result
-	var processes []AppProcessModel
+	var processes []ServiceProcessModel
 	for rows.Next() {
-		var process AppProcessModel
+		var process ServiceProcessModel
 
 		// Handle null values
 		var listeners, root_directory, client_address sql.NullString
@@ -67,7 +67,7 @@ func (p AppProcess) RetrieveRunning() ([]AppProcessModel, error) {
 }
 
 // Retrive all services
-func (p AppProcess) RetrieveAll() ([]AppProcessModel, error) {
+func (p ServiceProcess) RetrieveAll() ([]ServiceProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
@@ -79,9 +79,9 @@ func (p AppProcess) RetrieveAll() ([]AppProcessModel, error) {
 	}
 
 	// Parse result
-	var processes []AppProcessModel
+	var processes []ServiceProcessModel
 	for rows.Next() {
-		var process AppProcessModel
+		var process ServiceProcessModel
 
 		// Handle null values
 		var listeners, root_directory, client_address sql.NullString
@@ -107,8 +107,8 @@ func (p AppProcess) RetrieveAll() ([]AppProcessModel, error) {
 	return processes, nil
 }
 
-func (p AppProcess) Create(data map[string]interface{}) (AppProcessModel, error) {
-	var process AppProcessModel
+func (p ServiceProcess) Create(data map[string]interface{}) (ServiceProcessModel, error) {
+	var process ServiceProcessModel
 
 	// Get keys and values
 	refKeys := reflect.ValueOf(data).MapKeys()
@@ -134,7 +134,56 @@ func (p AppProcess) Create(data map[string]interface{}) (AppProcessModel, error)
 		&process.Tunnelled, &process.CreatedAt,
 	)
 	if err != nil {
-		return AppProcessModel{}, err
+		return ServiceProcessModel{}, err
+	}
+
+	process.RootDirectory = root_directory.String
+	process.ClientAddress = client_address.String
+	// Listeners are stored in the db as strings separated by comma
+	// we'll split that into slice
+	process.Listeners = strings.Split(listeners.String, ", ")
+
+	// Return result
+	return process, nil
+}
+
+func (p ServiceProcess) Update(name string, data map[string]interface{}) (ServiceProcessModel, error) {
+	// Delete pid, name, and created_at from data. This are read-only fields
+	for _, f := range []string{"pid", "name", "created_at"} {
+		delete(data, f)
+	}
+
+	var process ServiceProcessModel
+
+	// Get keys and values
+	refKeys := reflect.ValueOf(data).MapKeys()
+	keys := make([]string, len(refKeys))
+	values := make([]interface{}, len(refKeys))
+	for i, k := range refKeys {
+		keys[i] = k.String()
+		values[i] = data[k.String()]
+	}
+
+	// Append name to values
+	values = append(values, name)
+
+	// Execute query
+	query := fmt.Sprintf(`
+		UPDATE processes SET %s
+		WHERE name = $%d
+		RETURNING pid, name, status, type, listeners, 
+		root_directory, client_address, tunnelled, created_at 
+	`, utils.GenerateSetConditions(keys), len(values))
+
+	// Handle null values
+	var listeners, root_directory, client_address sql.NullString
+	err := p.DB.QueryRow(query, values...).Scan(
+		&process.Pid, &process.Name, &process.Status, &process.Type,
+		&listeners, &root_directory, &client_address,
+		&process.Tunnelled, &process.CreatedAt,
+	)
+	if err != nil {
+		return ServiceProcessModel{}, err
 	}
 
 	process.RootDirectory = root_directory.String
