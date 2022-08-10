@@ -195,3 +195,35 @@ func (p ServiceProcess) Update(name string, data map[string]interface{}) (Servic
 	// Return result
 	return process, nil
 }
+
+func (p ServiceProcess) Get(name string) (ServiceProcessModel, error) {
+	var process ServiceProcessModel
+
+	// Execute query
+	query := `
+	SELECT 
+		pid, name, status, type, listeners, 
+		root_directory, client_address, tunnelled, created_at 
+	FROM processes WHERE name=$1
+	`
+
+	// Handle null values
+	var listeners, root_directory, client_address sql.NullString
+	err := p.DB.QueryRow(query, name).Scan(
+		&process.Pid, &process.Name, &process.Status, &process.Type,
+		&listeners, &root_directory, &client_address,
+		&process.Tunnelled, &process.CreatedAt,
+	)
+	if err != nil {
+		return ServiceProcessModel{}, err
+	}
+
+	process.RootDirectory = root_directory.String
+	process.ClientAddress = client_address.String
+	// Listeners are stored in the db as strings separated by comma
+	// we'll split that into slice
+	process.Listeners = strings.Split(listeners.String, ", ")
+
+	// Return result
+	return process, nil
+}

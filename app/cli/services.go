@@ -37,8 +37,8 @@ type ServiceProcess struct {
 }
 
 // List running services
-func (ac *ServiceCommand) ListRunning() {
-	domainPort := port.NewDomainPort(ac.defaultDB)
+func (c *ServiceCommand) ListRunning() {
+	domainPort := port.NewDomainPort(c.defaultDB)
 	processes, err := domainPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
 		fmt.Println("Error retrieve running services:", err)
@@ -47,9 +47,9 @@ func (ac *ServiceCommand) ListRunning() {
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
-	t.SetDividers(table.UnicodeRoundedDividers)
+	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("PID", "NAME", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -61,7 +61,8 @@ func (ac *ServiceCommand) ListRunning() {
 		}
 
 		t.AddRow(
-			string(p.Pid), p.Name, p.Type, listeners, p.RootDirectory,
+			p.Name, p.Type, utils.TruncateString(listeners, 20), 
+			utils.TruncateString(p.RootDirectory, 20),
 			p.ClientAddress, tunnelled, created_at,
 		)
 	}
@@ -70,8 +71,8 @@ func (ac *ServiceCommand) ListRunning() {
 }
 
 // List all services
-func (ac *ServiceCommand) ListAll() {
-	domainPort := port.NewDomainPort(ac.defaultDB)
+func (c *ServiceCommand) ListAll() {
+	domainPort := port.NewDomainPort(c.defaultDB)
 	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
 		fmt.Println("Error retrieving services:", err)
@@ -80,9 +81,9 @@ func (ac *ServiceCommand) ListAll() {
 
 	// Draw table to list processes
 	t := table.New(os.Stdout)
-	t.SetDividers(table.UnicodeRoundedDividers)
+	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("PID", "NAME", "STATUS", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -98,7 +99,8 @@ func (ac *ServiceCommand) ListAll() {
 		}
 
 		t.AddRow(
-			string(p.Pid), p.Name, status, p.Type, listeners, p.RootDirectory,
+			p.Name, status, p.Type, utils.TruncateString(listeners, 20), 
+			utils.TruncateString(p.RootDirectory, 20),
 			p.ClientAddress, tunnelled, created_at,
 		)
 	}
@@ -106,11 +108,11 @@ func (ac *ServiceCommand) ListAll() {
 }
 
 // Add new service
-func (ac *ServiceCommand) Add(filepath string) {
+func (c *ServiceCommand) Add(filepath string, update bool) {
 	// Ensure the file exists
 	f, err := os.Open(filepath)
 	if err != nil {
-		fmt.Println("Could not add new service; \"conoid.yml\": File not found")
+		fmt.Println("No file named: \"conoid.yml\"")
 		return
 	}
 	defer f.Close()
@@ -129,18 +131,25 @@ func (ac *ServiceCommand) Add(filepath string) {
 	}
 
 	// Ensure service doesn't already exist
-	domainPort := port.NewDomainPort(ac.defaultDB)
+	domainPort := port.NewDomainPort(c.defaultDB)
 	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
-		fmt.Println("Could not add service:", err)
+		fmt.Println(err)
 		return
 	}
 
 	// Check processes' names
+	var serviceToUpdate string
 	for _, p := range processes {
 		if p.Name == validatedConf.Name {
-			fmt.Printf("Could not add service: an service with name \"%s\" already exists\n", validatedConf.Name)
-			return
+			if !update {
+				fmt.Printf("A service already exists with the name \"%s\"; Use the \"--update\" flag to modify service\n", validatedConf.Name)
+				return
+			}
+
+			// Store data for update
+			serviceToUpdate = p.Name
+			break
 		}
 	}
 
@@ -148,7 +157,7 @@ func (ac *ServiceCommand) Add(filepath string) {
 	// First, to json
 	jsondata, err := json.Marshal(validatedConf)
 	if err != nil {
-		fmt.Println("Could not add service:", err)
+		fmt.Println(err)
 		return
 	}
 	// Now, to map
@@ -171,15 +180,61 @@ func (ac *ServiceCommand) Add(filepath string) {
 		mapConf["listeners"] = strings.Join(ss, ", ")
 	}
 
-	// Generate pid, status, and created at
-	mapConf["pid"] = strings.ReplaceAll(uuid.New().String(), "-", "") // Stripping hyphens
-	mapConf["status"] = 1
-	mapConf["created_at"] = time.Now().Unix()
+	if !update {
+		// Generate pid, status, and created at
+		mapConf["pid"] = strings.ReplaceAll(uuid.New().String(), "-", "") // Stripping hyphens
+		mapConf["status"] = 1
+		mapConf["created_at"] = time.Now().Unix()
+	
+		_, err = domainPort.ServiceProcesses().Create(mapConf)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Your service was successfully added. Restart conoid to start accepting request")
+	} else {
+		// Updating service
+		_, err := domainPort.ServiceProcesses().Update(serviceToUpdate, mapConf)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Printf("\"%s\" service was updated. Restart conoid to synchronize update\n", serviceToUpdate)
+	}
+}
 
-	_, err = domainPort.ServiceProcesses().Create(mapConf)
+// Retrieve details of a servive
+func (c *ServiceCommand) Get(name string) {
+	// Retrieve from db
+	domainPort := port.NewDomainPort(c.defaultDB)
+	service, err := domainPort.ServiceProcesses().Get(name)
 	if err != nil {
-		fmt.Println("Could not add service:", err)
+		fmt.Printf("Could not retrieve service: \"%s\"\n", name)
 		return
 	}
-	fmt.Println("Your service was successfully added. Restart conoid to start accepting request")
+
+	// Convert booleans to string type
+	tunnelled := "False"
+	if service.Tunnelled {
+		tunnelled = "True"
+	}
+	status := "Stopped"
+	if service.Status {
+		status = "Running"
+	}
+
+	// Show table
+	t := table.New(os.Stdout)
+	t.SetDividers(table.UnicodeDividers)
+	t.AddRow("NAME", service.Name)
+	t.AddRow("STATUS", status)
+	t.AddRow("TYPE", strings.Title(service.Type)+" rendering")
+	t.AddRow("LISTENING ON", strings.Join(service.Listeners, ", "))
+	if service.Type == "static" {
+		t.AddRow("DOCUMENT DIRECTORY", service.RootDirectory)
+	}
+	t.AddRow("ALLOWED HOST", service.ClientAddress)
+	t.AddRow("TUNNELLED", tunnelled)
+	t.AddRow("CREATED", utils.TimeAgo(service.CreatedAt, time.Now().Unix()))
+	t.Render()
 }

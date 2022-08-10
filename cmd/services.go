@@ -21,17 +21,31 @@ var (
 			// Initialize "service" commands
 			services := cli.NewCLICommands().Services()
 
-			// Add new service
 			if f, _ := flags.GetBool("add"); f {
+				// Add new service
+
 				// Open the app's configuration file "conoid.yml"
 				wd, _ := os.Getwd()
 				pathToConf := filepath.Join(wd, "conoid.yml")
 				// Check if such file exists
 				if _, err := os.Stat(pathToConf); err != nil {
-					fmt.Println("A file named \"conoid.yml\" could not be found in the current directory")
+					fmt.Println("No file named \"conoid.yml\" in the current directory")
 					return
 				}
-				services.Add(pathToConf)
+				services.Add(pathToConf, false)
+				return
+			} else if f, _ := flags.GetBool("update"); f {
+				// Update existing service
+
+				// Open the app's configuration file "conoid.yml"
+				wd, _ := os.Getwd()
+				pathToConf := filepath.Join(wd, "conoid.yml")
+				// Check if such file exists
+				if _, err := os.Stat(pathToConf); err != nil {
+					fmt.Println("No file named \"conoid.yml\" in the current directory")
+					return
+				}
+				services.Add(pathToConf, true)
 				return
 			}
 		},
@@ -52,11 +66,15 @@ var (
 			// List all Services
 			if f, _ := flags.GetBool("all"); f {
 				services.ListAll()
-				return
+			} else if f, _ := flags.GetBool("all"); f {
+				// Retrieve a service
+				services.ListAll()
+			} else if f, _ := flags.GetString("name"); f != "" {
+				services.Get(f)
+			} else {
+				// List running services
+				services.ListRunning()
 			}
-
-			// List only running services
-			services.ListRunning()
 		},
 	}
 )
@@ -65,8 +83,10 @@ func init() {
 	// serviceCmd
 	rootCmd.AddCommand(serviceCmd)
 	serviceCmd.Flags().BoolP("add", "", false, "lookup \"conoid.yml\" file in the current directory and add service")
+	serviceCmd.Flags().BoolP("update", "", false, "modify service based on \"conoid.yml\"")
 
 	// servicePsCmd
 	serviceCmd.AddCommand(servicePsCmd)
 	servicePsCmd.Flags().BoolP("all", "a", false, "list all services")
+	servicePsCmd.Flags().StringP("name", "n", "", "show details of a service")
 }
