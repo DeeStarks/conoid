@@ -31,7 +31,7 @@ type ServiceProcess struct {
 	Type          string
 	Listeners     []string
 	RootDirectory string
-	ClientAddress string
+	RemoteServer  string
 	Tunnelled     bool
 	CreatedAt     int64
 }
@@ -49,7 +49,7 @@ func (c *ServiceCommand) ListRunning() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "TYPE", "LISTENERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -61,9 +61,9 @@ func (c *ServiceCommand) ListRunning() {
 		}
 
 		t.AddRow(
-			p.Name, p.Type, utils.TruncateString(listeners, 20), 
+			p.Name, p.Type, utils.TruncateString(listeners, 20),
 			utils.TruncateString(p.RootDirectory, 20),
-			p.ClientAddress, tunnelled, created_at,
+			p.RemoteServer, tunnelled, created_at,
 		)
 	}
 	t.Render()
@@ -83,7 +83,7 @@ func (c *ServiceCommand) ListAll() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENERS", "ROOT", "CLIENT", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -99,9 +99,9 @@ func (c *ServiceCommand) ListAll() {
 		}
 
 		t.AddRow(
-			p.Name, status, p.Type, utils.TruncateString(listeners, 20), 
+			p.Name, status, p.Type, utils.TruncateString(listeners, 20),
 			utils.TruncateString(p.RootDirectory, 20),
-			p.ClientAddress, tunnelled, created_at,
+			p.RemoteServer, tunnelled, created_at,
 		)
 	}
 	t.Render()
@@ -185,7 +185,7 @@ func (c *ServiceCommand) Add(filepath string, update bool) {
 		mapConf["pid"] = strings.ReplaceAll(uuid.New().String(), "-", "") // Stripping hyphens
 		mapConf["status"] = 1
 		mapConf["created_at"] = time.Now().Unix()
-	
+
 		_, err = domainPort.ServiceProcesses().Create(mapConf)
 		if err != nil {
 			fmt.Println(err)
@@ -231,9 +231,9 @@ func (c *ServiceCommand) Get(name string) {
 	t.AddRow("TYPE", strings.Title(service.Type)+" rendering")
 	t.AddRow("LISTENING ON", strings.Join(service.Listeners, ", "))
 	if service.Type == "static" {
-		t.AddRow("DOCUMENT DIRECTORY", service.RootDirectory)
+		t.AddRow("DOCUMENT ROOT", service.RootDirectory)
 	}
-	t.AddRow("ALLOWED HOST", service.ClientAddress)
+	t.AddRow("REMOTE SERVER", service.RemoteServer)
 	t.AddRow("TUNNELLED", tunnelled)
 	t.AddRow("CREATED", utils.TimeAgo(service.CreatedAt, time.Now().Unix()))
 	t.Render()

@@ -7,10 +7,10 @@ import (
 )
 
 func TestGeneratePlaceholders(t *testing.T) {
-	tests := []struct{
-		n int
+	tests := []struct {
+		n        int
 		expected string
-	} {
+	}{
 		{n: 4, expected: "$1, $2, $3, $4"},
 		{n: 0, expected: ""},
 		{n: 1, expected: "$1"},
@@ -25,10 +25,10 @@ func TestGeneratePlaceholders(t *testing.T) {
 }
 
 func TestGenerateSetConditions(t *testing.T) {
-	tests := []struct{
-		keys []string
+	tests := []struct {
+		keys     []string
 		expected string
-	} {
+	}{
 		{keys: []string{"a", "b", "c"}, expected: "a = $1, b = $2, c = $3"},
 		{keys: []string{}, expected: ""},
 		{keys: []string{"id", "name"}, expected: "id = $1, name = $2"},

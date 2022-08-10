@@ -5,7 +5,7 @@ CREATE TABLE processes (
     type TEXT NOT NULL,
     listeners TEXT,
     root_directory TEXT,
-    client_address TEXT,
+    remote_server TEXT,
     tunnelled INTEGER,
     created_at NUMERIC NOT NULL
 )

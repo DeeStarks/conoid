@@ -43,8 +43,7 @@ func InitServices(defaultDB *sql.DB) IServices {
 func (s *Services) ServeServices() {
 	// Serve the welcome page
 	welcomePort := s.ServeStatic("./assets/welcome/")
-	// We'll view the welcome page on the default port :80
-	// so we add the port to every possible host
+	// The welcome page will be served by default on port 80
 	s.running["[::1]:80"] = []string{fmt.Sprintf("[::1]:%d", welcomePort)}
 	s.running["localhost:80"] = []string{fmt.Sprintf("[::1]:%d", welcomePort)}
 	s.running["localhost"] = []string{fmt.Sprintf("[::1]:%d", welcomePort)}
@@ -69,7 +68,7 @@ func (s *Services) ServeServices() {
 			if err != nil {
 				log.Println("Could not update service state:", err)
 			}
-			s.running[service.ClientAddress] = []string{addr}
+			s.running[service.RemoteServer] = []string{addr}
 		} else if service.Type == "server" {
 			servers := []string{}
 			// Connect to all listening servers
@@ -82,7 +81,7 @@ func (s *Services) ServeServices() {
 				// Append servers to listening servers
 				servers = append(servers, addr)
 			}
-			s.running[service.ClientAddress] = servers
+			s.running[service.RemoteServer] = servers
 
 		}
 

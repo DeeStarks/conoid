@@ -11,12 +11,12 @@ import (
 )
 
 type AppConf struct {
-	Name          string   `yaml:"name" json:"name"`                       // Name of application
-	Type          string   `yaml:"type" json:"type"`                       // "server" or "static"
-	Listeners     []string `yaml:"listeners" json:"listeners,omitempty"`   // Load will be automatically balanced across listners. Required if "Renderer" is "server"
-	RootDirectory string   `yaml:"root" json:"root_directory,omitempty"`   // Path to root directory. Required for "static" rendering
-	ClientAddr    string   `yaml:"client" json:"client_address,omitempty"` // Client address
-	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`             // Share service to a remote network. This will be redundant if the "ClientAddr" is set
+	Name          string   `yaml:"name" json:"name"`                             // Name of application
+	Type          string   `yaml:"type" json:"type"`                             // "server" or "static"
+	Listeners     []string `yaml:"listeners" json:"listeners,omitempty"`         // Load will be automatically balanced across listners. Required if "Renderer" is "server"
+	RootDirectory string   `yaml:"root" json:"root_directory,omitempty"`         // Path to root directory. Required for "static" rendering
+	RemoteServer  string   `yaml:"remote_server" json:"remote_server,omitempty"` // Address to accept and respond to requests
+	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`                   // Share service to a remote network. This will be redundant if the "ClientAddr" is set
 }
 
 // Deserialize app yaml file
@@ -75,7 +75,7 @@ func ValidateConf(conf AppConf) (AppConf, error) {
 	}
 
 	// Set "Tunnelled" to false if "ClientAddr" is passed
-	if len(conf.ClientAddr) > 0 {
+	if len(conf.RemoteServer) > 0 {
 		conf.Tunnelled = false
 	}
 	return conf, nil

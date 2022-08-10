@@ -16,7 +16,7 @@ type ServiceProcessModel struct {
 	Type          string
 	Listeners     []string
 	RootDirectory string
-	ClientAddress string
+	RemoteServer  string
 	Tunnelled     bool
 	CreatedAt     int64
 }
@@ -30,7 +30,7 @@ func (p ServiceProcess) RetrieveRunning() ([]ServiceProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
+		root_directory, remote_server, tunnelled, created_at 
 	FROM processes WHERE status=1
 	`)
 	if err != nil {
@@ -43,11 +43,11 @@ func (p ServiceProcess) RetrieveRunning() ([]ServiceProcessModel, error) {
 		var process ServiceProcessModel
 
 		// Handle null values
-		var listeners, root_directory, client_address sql.NullString
+		var listeners, root_directory, remote_server sql.NullString
 
 		err = rows.Scan(
 			&process.Pid, &process.Name, &process.Status, &process.Type,
-			&listeners, &root_directory, &client_address,
+			&listeners, &root_directory, &remote_server,
 			&process.Tunnelled, &process.CreatedAt,
 		)
 		if err != nil {
@@ -55,7 +55,7 @@ func (p ServiceProcess) RetrieveRunning() ([]ServiceProcessModel, error) {
 		}
 
 		process.RootDirectory = root_directory.String
-		process.ClientAddress = client_address.String
+		process.RemoteServer = remote_server.String
 		// Listeners are stored in the db as strings separated by comma
 		// we'll split that into slice
 		process.Listeners = strings.Split(listeners.String, ", ")
@@ -71,7 +71,7 @@ func (p ServiceProcess) RetrieveAll() ([]ServiceProcessModel, error) {
 	rows, err := p.DB.Query(`
 	SELECT 
 		pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
+		root_directory, remote_server, tunnelled, created_at 
 	FROM processes
 	`)
 	if err != nil {
@@ -84,11 +84,11 @@ func (p ServiceProcess) RetrieveAll() ([]ServiceProcessModel, error) {
 		var process ServiceProcessModel
 
 		// Handle null values
-		var listeners, root_directory, client_address sql.NullString
+		var listeners, root_directory, remote_server sql.NullString
 
 		err = rows.Scan(
 			&process.Pid, &process.Name, &process.Status, &process.Type,
-			&listeners, &root_directory, &client_address,
+			&listeners, &root_directory, &remote_server,
 			&process.Tunnelled, &process.CreatedAt,
 		)
 		if err != nil {
@@ -96,7 +96,7 @@ func (p ServiceProcess) RetrieveAll() ([]ServiceProcessModel, error) {
 		}
 
 		process.RootDirectory = root_directory.String
-		process.ClientAddress = client_address.String
+		process.RemoteServer = remote_server.String
 		// Listeners are stored in the db as strings separated by comma
 		// we'll split that into slice
 		process.Listeners = strings.Split(listeners.String, ", ")
@@ -123,14 +123,14 @@ func (p ServiceProcess) Create(data map[string]interface{}) (ServiceProcessModel
 	query := fmt.Sprintf(`
 		INSERT INTO processes ( %s ) VALUES ( %s )
 		RETURNING pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
+		root_directory, remote_server, tunnelled, created_at 
 	`, strings.Join(keys, ", "), utils.GeneratePlaceholders(len(keys)))
 
 	// Handle null values
-	var listeners, root_directory, client_address sql.NullString
+	var listeners, root_directory, remote_server sql.NullString
 	err := p.DB.QueryRow(query, values...).Scan(
 		&process.Pid, &process.Name, &process.Status, &process.Type,
-		&listeners, &root_directory, &client_address,
+		&listeners, &root_directory, &remote_server,
 		&process.Tunnelled, &process.CreatedAt,
 	)
 	if err != nil {
@@ -138,7 +138,7 @@ func (p ServiceProcess) Create(data map[string]interface{}) (ServiceProcessModel
 	}
 
 	process.RootDirectory = root_directory.String
-	process.ClientAddress = client_address.String
+	process.RemoteServer = remote_server.String
 	// Listeners are stored in the db as strings separated by comma
 	// we'll split that into slice
 	process.Listeners = strings.Split(listeners.String, ", ")
@@ -172,14 +172,14 @@ func (p ServiceProcess) Update(name string, data map[string]interface{}) (Servic
 		UPDATE processes SET %s
 		WHERE name = $%d
 		RETURNING pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
+		root_directory, remote_server, tunnelled, created_at 
 	`, utils.GenerateSetConditions(keys), len(values))
 
 	// Handle null values
-	var listeners, root_directory, client_address sql.NullString
+	var listeners, root_directory, remote_server sql.NullString
 	err := p.DB.QueryRow(query, values...).Scan(
 		&process.Pid, &process.Name, &process.Status, &process.Type,
-		&listeners, &root_directory, &client_address,
+		&listeners, &root_directory, &remote_server,
 		&process.Tunnelled, &process.CreatedAt,
 	)
 	if err != nil {
@@ -187,7 +187,7 @@ func (p ServiceProcess) Update(name string, data map[string]interface{}) (Servic
 	}
 
 	process.RootDirectory = root_directory.String
-	process.ClientAddress = client_address.String
+	process.RemoteServer = remote_server.String
 	// Listeners are stored in the db as strings separated by comma
 	// we'll split that into slice
 	process.Listeners = strings.Split(listeners.String, ", ")
@@ -203,15 +203,15 @@ func (p ServiceProcess) Get(name string) (ServiceProcessModel, error) {
 	query := `
 	SELECT 
 		pid, name, status, type, listeners, 
-		root_directory, client_address, tunnelled, created_at 
+		root_directory, remote_server, tunnelled, created_at 
 	FROM processes WHERE name=$1
 	`
 
 	// Handle null values
-	var listeners, root_directory, client_address sql.NullString
+	var listeners, root_directory, remote_server sql.NullString
 	err := p.DB.QueryRow(query, name).Scan(
 		&process.Pid, &process.Name, &process.Status, &process.Type,
-		&listeners, &root_directory, &client_address,
+		&listeners, &root_directory, &remote_server,
 		&process.Tunnelled, &process.CreatedAt,
 	)
 	if err != nil {
@@ -219,7 +219,7 @@ func (p ServiceProcess) Get(name string) (ServiceProcessModel, error) {
 	}
 
 	process.RootDirectory = root_directory.String
-	process.ClientAddress = client_address.String
+	process.RemoteServer = remote_server.String
 	// Listeners are stored in the db as strings separated by comma
 	// we'll split that into slice
 	process.Listeners = strings.Split(listeners.String, ", ")

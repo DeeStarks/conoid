@@ -37,8 +37,8 @@ func TestCValidateConf(t *testing.T) {
 				Listeners: []string{
 					"127.0.0.1:8000",
 				},
-				ClientAddr: "124.567.785.34:33004",
-				Tunnelled:  true,
+				RemoteServer: "124.567.785.34:33004",
+				Tunnelled:    true,
 			},
 			expected: utils.AppConf{
 				Name: "test3",
@@ -46,8 +46,8 @@ func TestCValidateConf(t *testing.T) {
 				Listeners: []string{
 					"127.0.0.1:8000",
 				},
-				ClientAddr: "124.567.785.34:33004",
-				Tunnelled:  false,
+				RemoteServer: "124.567.785.34:33004",
+				Tunnelled:    false,
 			},
 		},
 		{
@@ -55,7 +55,7 @@ func TestCValidateConf(t *testing.T) {
 				Name:          "test4",
 				Type:          "static",
 				RootDirectory: "./myapp/",
-				ClientAddr:    "",
+				RemoteServer:  "",
 				Tunnelled:     true,
 			},
 			expected: utils.AppConf{
@@ -63,7 +63,7 @@ func TestCValidateConf(t *testing.T) {
 				Type:          "static",
 				Listeners:     []string{},
 				RootDirectory: "./myapp/",
-				ClientAddr:    "",
+				RemoteServer:  "",
 				Tunnelled:     true,
 			},
 		},
@@ -72,7 +72,7 @@ func TestCValidateConf(t *testing.T) {
 				Name:          "test5",
 				Type:          "mytype",
 				RootDirectory: "./myapp/",
-				ClientAddr:    "",
+				RemoteServer:  "",
 				Tunnelled:     true,
 			},
 			expected: utils.AppConf{},

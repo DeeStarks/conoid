@@ -7,34 +7,34 @@ import (
 )
 
 func TestTruncateString(t *testing.T) {
-	tests := []struct{
-		s	string
-		l 	int
-		expected	string
-	} {
+	tests := []struct {
+		s        string
+		l        int
+		expected string
+	}{
 		{
-			s: "Hello, World!",
-			l: 4,
+			s:        "Hello, World!",
+			l:        4,
 			expected: "Hell...",
 		},
 		{
-			s: "Hello, World!",
-			l: 0,
+			s:        "Hello, World!",
+			l:        0,
 			expected: "...",
 		},
 		{
-			s: "Hello, World!",
-			l: 12,
+			s:        "Hello, World!",
+			l:        12,
 			expected: "Hello, World...",
 		},
 		{
-			s: "Hello, World!",
-			l: 13,
+			s:        "Hello, World!",
+			l:        13,
 			expected: "Hello, World!",
 		},
 		{
-			s: "Hello, World!",
-			l: 14,
+			s:        "Hello, World!",
+			l:        14,
 			expected: "Hello, World!",
 		},
 	}
