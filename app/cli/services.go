@@ -153,6 +153,12 @@ func (c *ServiceCommand) Add(filepath string, update bool) {
 		}
 	}
 
+	// The service to be updated exists
+	if update && serviceToUpdate == "" {
+		fmt.Printf("No service named \"%s\". Do you mean to \"--add\"?\n", validatedConf.Name)
+		return
+	}
+
 	// Convert the configurations to a map type
 	// First, to json
 	jsondata, err := json.Marshal(validatedConf)
