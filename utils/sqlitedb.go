@@ -9,8 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Migrate sqlite3 schema
-func Sqlite3Migrate(pathToDB, pathToSchema string) error {
+// Migrate sqlite3 schema from file
+func Sqlite3FSMigrate(pathToDB, pathToSchema string) error {
 	db, err := sql.Open("sqlite3", pathToDB)
 	if err != nil {
 		return err
@@ -31,6 +31,21 @@ func Sqlite3Migrate(pathToDB, pathToSchema string) error {
 
 	// Execute
 	script := string(buf[:n])
+	_, err = db.Exec(script)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Migrate sqlite3 schema from script
+func Sqlite3ScriptMigrate(pathToDB, script string) error {
+	db, err := sql.Open("sqlite3", pathToDB)
+	if err != nil {
+		return err
+	}
+
+	// Execute
 	_, err = db.Exec(script)
 	if err != nil {
 		return err

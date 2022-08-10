@@ -15,7 +15,7 @@ type AppConf struct {
 	Type          string   `yaml:"type" json:"type"`                             // "server" or "static"
 	Listeners     []string `yaml:"listeners" json:"listeners,omitempty"`         // Load will be automatically balanced across listners. Required if "Renderer" is "server"
 	RootDirectory string   `yaml:"root" json:"root_directory,omitempty"`         // Path to root directory. Required for "static" rendering
-	RemoteServer  string   `yaml:"remote_server" json:"remote_server,omitempty"` // Address to accept and respond to requests
+	RemoteServer  string   `yaml:"remote-server" json:"remote_server,omitempty"` // Address to accept and respond to requests
 	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`                   // Share service to a remote network. This will be redundant if the "ClientAddr" is set
 }
 
