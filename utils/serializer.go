@@ -4,22 +4,23 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type AppConf struct {
-	Name          string   `yaml:"name" json:"name"`             // Name of application
-	Type          string   `yaml:"type" json:"type"`             // "server" or "static"
+	Name          string   `yaml:"name" json:"name"`                       // Name of application
+	Type          string   `yaml:"type" json:"type"`                       // "server" or "static"
 	Listeners     []string `yaml:"listeners" json:"listeners,omitempty"`   // Load will be automatically balanced across listners. Required if "Renderer" is "server"
 	RootDirectory string   `yaml:"root" json:"root_directory,omitempty"`   // Path to root directory. Required for "static" rendering
 	ClientAddr    string   `yaml:"client" json:"client_address,omitempty"` // Client address
-	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`   // Share service to a remote network. This will be redundant if the "ClientAddr" is set
+	Tunnelled     bool     `yaml:"tunnelled" json:"tunnelled"`             // Share service to a remote network. This will be redundant if the "ClientAddr" is set
 }
 
 // Deserialize app yaml file
-func DeserializeAppYAML(file *os.File) (AppConf, error) {
+func DeserializeConf(file *os.File) (AppConf, error) {
 	conf := AppConf{}
 
 	// Get file byte data
@@ -63,6 +64,11 @@ func ValidateConf(conf AppConf) (AppConf, error) {
 		if conf.RootDirectory == "" {
 			return AppConf{}, errors.New("expected \"root\" directory for a \"static\" type")
 		}
+
+		// Get directory's absolute path
+		wd, _ := os.Getwd()
+		root := filepath.Join(wd, conf.RootDirectory)
+		conf.RootDirectory = root
 
 		// Empty listeners
 		conf.Listeners = []string{}
