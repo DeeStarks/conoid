@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -24,8 +25,13 @@ var (
 			if f, _ := flags.GetBool("add"); f {
 				// Open the app's configuration file "conoid.yml"
 				wd, _ := os.Getwd()
-				appFile := filepath.Join(wd, "conoid.yml")
-				services.Add(appFile)
+				pathToConf := filepath.Join(wd, "conoid.yml")
+				// Check if such file exists
+				if _, err := os.Stat(pathToConf); err != nil {
+					fmt.Println("A file named \"conoid.yml\" could not be found in the current directory")
+					return
+				}
+				services.Add(pathToConf)
 				return
 			}
 		},

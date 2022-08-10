@@ -91,7 +91,6 @@ func (s *Server) Serve() {
 			log.Println("Connection failed:", err)
 			continue
 		}
-		log.Println("Connected")
 
 		// Handle connection in a new goroutine
 		go s.process(conn)

@@ -86,9 +86,7 @@ func (s *Services) ServeServices() {
 
 		}
 
-		// if service.Tunnelled {
-		// 	// tools.Tunnel(service.Listeners)
-		// }
+		// Tunnelling
 	}
 }
 
@@ -114,7 +112,8 @@ func (s *Services) ConnectToServer(addr string) (net.Conn, error) {
 // Serve static Services, and return their port numbers
 func (s *Services) ServeStatic(dir string) int {
 	fs := http.FileServer(http.Dir(dir))
-	http.Handle("/", fs)
+	mux := http.NewServeMux()
+	mux.Handle("/", fs)
 
 	// Get and listen on the next port number
 	portNo := s.nextPN
@@ -122,7 +121,7 @@ func (s *Services) ServeStatic(dir string) int {
 		// Dial the port number to see if it's available
 		_, err := net.Dial("tcp", fmt.Sprintf("[::]:%d", portNo))
 		if err != nil {
-			go http.ListenAndServe(fmt.Sprintf(":%d", portNo), fs)
+			go http.ListenAndServe(fmt.Sprintf(":%d", portNo), mux)
 			break
 		}
 		// If it's already in use, try the next port
