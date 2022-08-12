@@ -21,45 +21,56 @@ func TestValidateConf(t *testing.T) {
 				Type:          "server",
 				RootDirectory: ".",
 			},
-			expected: utils.AppConf{},
+			expected: utils.AppConf{}, // Type "server" requires "Listener" field
 		},
 		{
 			conf: utils.AppConf{
 				Name: "test2",
 				Type: "static",
 				Listeners: []string{
-					"127.0.0.1:8000",
+					"http://127.0.0.1:8000",
 				},
+			},
+			expected: utils.AppConf{}, // Type "static" expectes "RootDirectory"
+		},
+		{
+			conf: utils.AppConf{
+				Name: "test3",
+				Type: "server",
+				Listeners: []string{
+					"127.0.0.1:8000", // Invalid url. Must include the protocol
+				},
+				Tunnelled: true,
 			},
 			expected: utils.AppConf{},
 		},
 		{
 			conf: utils.AppConf{
-				Name: "test3",
+				Name: "test4",
 				Type: "server",
 				Listeners: []string{
-					"127.0.0.1:8000",
+					"http://127.0.0.1:8000",
 				},
 				Tunnelled: true,
 			},
 			expected: utils.AppConf{
-				Name: "test3",
+				Name: "test4",
 				Type: "server",
 				Listeners: []string{
-					"127.0.0.1:8000",
+					"127.0.0.1:8000", // Returns just the host name
 				},
 				Tunnelled: true,
 			},
 		},
 		{
 			conf: utils.AppConf{
-				Name:          "test4",
+				Name:          "test5",
 				Type:          "static",
 				RootDirectory: "./myapp/",
 				Tunnelled:     true,
 			},
 			expected: utils.AppConf{
-				Name:          "test4",
+				Name:          "test5",
 				Type:          "static",
 				Listeners:     []string{},
 				RootDirectory: filepath.Join(wd, "./myapp/"),
@@ -68,38 +79,10 @@ func TestValidateConf(t *testing.T) {
 		},
 		{
 			conf: utils.AppConf{
-				Name:          "test5",
-				Type:          "mytype",
+				Name:          "test6",
+				Type:          "mytype", // Unknown type. Expects "static" or "server"
 				RootDirectory: "./myapp/",
 				Tunnelled:     true,
-			},
-			expected: utils.AppConf{},
-		},
-		{
-			conf: utils.AppConf{
-				Name:          "test3",
-				Type:          "server",
-				RootDirectory: "./myapp/",
-				Tunnelled:     true,
-			},
-			expected: utils.AppConf{},
-		},
-		{
-			conf: utils.AppConf{
-				Name: "test3",
-				Type: "static",
-				Listeners: []string{
-					"127.0.0.1:8000",
-				},
-				Tunnelled: true,
-			},
-			expected: utils.AppConf{},
-		},
-		{
-			conf: utils.AppConf{
-				Name:      "test3",
-				Type:      "static",
-				Tunnelled: true,
 			},
 			expected: utils.AppConf{},
 		},

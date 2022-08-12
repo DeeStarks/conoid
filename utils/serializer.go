@@ -2,6 +2,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +31,15 @@ func ValidateConf(conf AppConf) (AppConf, error) {
 	if conf.Type == "server" {
 		if len(conf.Listeners) == 0 {
 			return AppConf{}, errors.New("type of \"server\" requires \"--listener\" or \"-l\" (e.g. \"[options] --listener localhost:8000\")")
+		}
+
+		// Validate the addresses
+		for i, l := range conf.Listeners {
+			pUrl, err := url.Parse(l)
+			if err != nil {
+				return AppConf{}, fmt.Errorf("invalid address: %s", err)
+			}
+			conf.Listeners[i] = pUrl.Host
 		}
 
 		// Set the static root as empty
