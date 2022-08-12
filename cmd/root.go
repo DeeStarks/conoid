@@ -45,10 +45,11 @@ var (
 			}
 
 			mltcc := 10       // Maximum localtunnel connections count
-			mltcc = mltcc * 2 // Incomming and outgoing connections
+			mltcc = mltcc * 2 // Incoming and outgoing connections
+			tunnelConnCount := tunnelled * mltcc
 			// Record all open connections
 			// This will be used to close all on shutdown
-			openConnsCh := make(chan net.Conn, config.MAX_CONN_COUNT+mltcc)
+			openConnsCh := make(chan net.Conn, config.MAX_CONN_COUNT+tunnelConnCount)
 
 			// Start server if no argumentss were passed or the first argument is "up"
 			if len(args) <= 0 || args[0] == "start" {
@@ -83,7 +84,7 @@ var (
 
 	versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "Print the version number of Conoid",
+		Short: "Current conoid version",
 		Long:  `All software has versions. This is Conoid's`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(config.VERSION)

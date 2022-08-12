@@ -1,13 +1,16 @@
 package utils_test
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/DeeStarks/conoid/utils"
 )
 
-func TestCValidateConf(t *testing.T) {
+func TestValidateConf(t *testing.T) {
+	wd, _ := os.Getwd()
 	tests := []struct {
 		conf     utils.AppConf
 		expected utils.AppConf
@@ -37,8 +40,7 @@ func TestCValidateConf(t *testing.T) {
 				Listeners: []string{
 					"127.0.0.1:8000",
 				},
-				RemoteServer: "124.567.785.34:33004",
-				Tunnelled:    true,
+				Tunnelled: true,
 			},
 			expected: utils.AppConf{
 				Name: "test3",
@@ -46,8 +48,7 @@ func TestCValidateConf(t *testing.T) {
 				Listeners: []string{
 					"127.0.0.1:8000",
 				},
-				RemoteServer: "124.567.785.34:33004",
-				Tunnelled:    false,
+				Tunnelled: true,
 			},
 		},
 		{
@@ -55,15 +56,13 @@ func TestCValidateConf(t *testing.T) {
 				Name:          "test4",
 				Type:          "static",
 				RootDirectory: "./myapp/",
-				RemoteServer:  "",
 				Tunnelled:     true,
 			},
 			expected: utils.AppConf{
 				Name:          "test4",
 				Type:          "static",
 				Listeners:     []string{},
-				RootDirectory: "./myapp/",
-				RemoteServer:  "",
+				RootDirectory: filepath.Join(wd, "./myapp/"),
 				Tunnelled:     true,
 			},
 		},
@@ -72,7 +71,34 @@ func TestCValidateConf(t *testing.T) {
 				Name:          "test5",
 				Type:          "mytype",
 				RootDirectory: "./myapp/",
-				RemoteServer:  "",
+				Tunnelled:     true,
+			},
+			expected: utils.AppConf{},
+		},
+		{
+			conf: utils.AppConf{
+				Name:          "test3",
+				Type:          "server",
+				RootDirectory: "./myapp/",
+				Tunnelled:     true,
+			},
+			expected: utils.AppConf{},
+		},
+		{
+			conf: utils.AppConf{
+				Name:          "test3",
+				Type:          "static",
+				Listeners: []string{
+					"127.0.0.1:8000",
+				},
+				Tunnelled:     true,
+			},
+			expected: utils.AppConf{},
+		},
+		{
+			conf: utils.AppConf{
+				Name:          "test3",
+				Type:          "static",
 				Tunnelled:     true,
 			},
 			expected: utils.AppConf{},

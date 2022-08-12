@@ -7,7 +7,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.14
 	github.com/spf13/cobra v1.5.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -17,4 +16,5 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

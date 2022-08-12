@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/DeeStarks/conoid/app/cli"
+	"github.com/DeeStarks/conoid/utils"
 	"github.com/spf13/cobra"
 )
 
 var (
-	serviceCmd = &cobra.Command{
-		Use:   "service",
-		Short: "Manage services",
-		Long:  `Used to manage services running on conoid`,
+	addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add new service",
+		Long:  `Add a new service or application`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get command flags
 			flags := cmd.Flags()
@@ -21,39 +21,61 @@ var (
 			// Initialize "service" commands
 			services := cli.NewCLICommands().Services()
 
-			if f, _ := flags.GetBool("add"); f {
+			if name, _ := flags.GetString("name"); name != "" {
 				// Add new service
-
-				// Open the app's configuration file "conoid.yml"
-				wd, _ := os.Getwd()
-				pathToConf := filepath.Join(wd, "conoid.yml")
-				// Check if such file exists
-				if _, err := os.Stat(pathToConf); err != nil {
-					fmt.Println("No file named \"conoid.yml\" in the current directory")
+				var conf utils.AppConf
+				var t string
+				if t, _ = flags.GetString("type"); t == "" {
+					fmt.Println("Invalid command: \"--type\" not specified")
 					return
 				}
-				services.Add(pathToConf, false)
-				return
-			} else if f, _ := flags.GetBool("update"); f {
-				// Update existing service
-
-				// Open the app's configuration file "conoid.yml"
-				wd, _ := os.Getwd()
-				pathToConf := filepath.Join(wd, "conoid.yml")
-				// Check if such file exists
-				if _, err := os.Stat(pathToConf); err != nil {
-					fmt.Println("No file named \"conoid.yml\" in the current directory")
-					return
+				conf.Name = name
+				conf.Type = t
+				conf.Tunnelled, _ = flags.GetBool("tunnel")
+				if d, _ := flags.GetString("directory"); d != "" {
+					conf.RootDirectory = d
 				}
-				services.Add(pathToConf, true)
+				if l, _ := flags.GetString("listener"); l != "" {
+					conf.Listeners = strings.Split(l, ",")
+				}
+
+				services.Add(conf, false)
 				return
 			}
-			fmt.Println("No flags specified. Execute \"conoid service -h\" for help")
+			fmt.Println("Invalid command: \"--name\" not specified")
 		},
 	}
 
-	// Services processes sub-command
-	servicePsCmd = &cobra.Command{
+	updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update a service",
+		Long:  `Update service/application`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Get command flags
+			flags := cmd.Flags()
+
+			// Initialize "service" commands
+			services := cli.NewCLICommands().Services()
+
+			if name, _ := flags.GetString("name"); name != "" {
+				// Add new service
+				var conf utils.AppConf
+				conf.Name = name
+				conf.Type, _ = flags.GetString("type")
+				listener, _ := flags.GetString("listener")
+				conf.Listeners = []string{listener}
+				conf.RootDirectory, _ = flags.GetString("directory")
+				conf.Tunnelled, _ = flags.GetBool("tunnel")
+
+				services.Add(conf, true)
+				return
+			}
+			fmt.Println("Invalid command: \"--name\" not specified")
+		},
+	}
+
+	// Services processes
+	psCmd = &cobra.Command{
 		Use:   "ps",
 		Short: "List running services",
 		Long:  "List runnning services",
@@ -80,7 +102,7 @@ var (
 	}
 
 	// Service restart
-	serviceStartCmd = &cobra.Command{
+	startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "Restart a stopped service",
 		Long:  "Restart a stopped service",
@@ -95,23 +117,58 @@ var (
 				services.Start(f)
 				return
 			}
-			fmt.Println("No flags specified. Execute \"conoid start -h\" for help")
+			fmt.Println("Invalid command. Execute \"conoid start -h\" for help")
+		},
+	}
+
+	// Service stop
+	stopCmd = &cobra.Command{
+		Use:   "stop",
+		Short: "Stop a running service",
+		Long:  "Stop a running service",
+		Run: func(cmd *cobra.Command, args []string) {
+			// If the "all" flag is passed, list all processes
+			flags := cmd.Flags()
+
+			// Initialize "service" commands
+			services := cli.NewCLICommands().Services()
+
+			if f, _ := flags.GetString("name"); f != "" {
+				services.Stop(f)
+				return
+			}
+			fmt.Println("Invalid command. Execute \"conoid stop -h\" for help")
 		},
 	}
 )
 
 func init() {
-	// serviceCmd
-	rootCmd.AddCommand(serviceCmd)
-	serviceCmd.Flags().BoolP("add", "", false, "lookup \"conoid.yml\" file in the current directory and add service")
-	serviceCmd.Flags().BoolP("update", "", false, "modify service based on \"conoid.yml\"")
+	// Add service
+	rootCmd.AddCommand(addCmd)
+	addCmd.Flags().StringP("name", "n", "", "name of application to add")
+	addCmd.Flags().StringP("type", "t", "", "application render type (\"static\" or \"server\")")
+	addCmd.Flags().StringP("listener", "l", "", "address to listen on (e.g. localhost:8080) - required if \"type\" is set to \"server\"")
+	addCmd.Flags().StringP("directory", "d", "", "document root of static application to serve (e.g. use \".\" for the current directory) - required if \"type\" is set to \"static\"")
+	addCmd.Flags().BoolP("tunnel", "", false, "share your app to the internet")
 
-	// servicePsCmd
-	serviceCmd.AddCommand(servicePsCmd)
-	servicePsCmd.Flags().BoolP("all", "a", false, "list all services")
-	servicePsCmd.Flags().StringP("name", "n", "", "show details of a service")
+	// Update service
+	rootCmd.AddCommand(updateCmd)
+	updateCmd.Flags().StringP("name", "n", "", "name of service to update")
+	updateCmd.Flags().StringP("type", "t", "", "render type (\"static\" or \"server\")")
+	updateCmd.Flags().StringP("listener", "l", "", "address to listen on (e.g. localhost:8080) - required if \"type\" is set to \"server\"")
+	updateCmd.Flags().StringP("directory", "d", "", "document root of static application to serve (e.g. use \".\" for the current directory) - required if \"type\" is set to \"static\"")
+	updateCmd.Flags().BoolP("tunnel", "", false, "share your app to the internet")
 
-	// serviceStartCmd
-	serviceCmd.AddCommand(serviceStartCmd)
-	serviceStartCmd.Flags().StringP("name", "n", "", "name of service to restart")
+	// Start a stopped service
+	rootCmd.AddCommand(startCmd)
+	startCmd.Flags().StringP("name", "n", "", "name of service to start")
+
+	// Start a stopped service
+	rootCmd.AddCommand(stopCmd)
+	stopCmd.Flags().StringP("name", "n", "", "name of running service to stop")
+
+	// Processes
+	rootCmd.AddCommand(psCmd)
+	psCmd.Flags().BoolP("all", "a", false, "list all services")
+	psCmd.Flags().StringP("name", "n", "", "show details of a service")
 }

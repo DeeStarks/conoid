@@ -42,7 +42,7 @@ func (s *Server) process(conn net.Conn) {
 
 	// TODO:
 	// The idea for the load balancer isn't fully formed yet.
-	// For now, it's always going to select the first server for every connection
+	// For now, it's always going to select the first server
 	lb := tools.NewLoadBalancer(addrs)
 	addr := lb.GetNextServer()
 
@@ -99,10 +99,10 @@ func (s *Server) Serve() {
 	connsCh := make(chan int, config.MAX_CONN_COUNT)
 
 	for {
-		// Block if connections count it full
+		// Block if connections count is full
 		connsCh <- 1
 
-		// Establish a point-to-point connection between the client and server
+		// Accept connections
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("Connection failed:", err)

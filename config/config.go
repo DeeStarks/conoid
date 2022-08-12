@@ -10,26 +10,26 @@ const (
 	VERSION = "0.0.1"
 
 	// Network
-	TCP_PORT       = 80
+	TCP_PORT       = 5000
 	MAX_CONN_COUNT = 100
 )
 
 var (
 	// File System
-	FS_ROOT    string
+	DATA_ROOT  string // Data storage
 	DEFAULT_DB string // Database to use by default
 )
 
 func init() {
 	switch runtime.GOOS {
 	case "windows":
-		FS_ROOT = os.ExpandEnv(`C:\Program Files\Conoid\`)
-		DEFAULT_DB = FS_ROOT + `Default.db`
+		DATA_ROOT = os.ExpandEnv(`C:\Program Files\Conoid\`)
+		DEFAULT_DB = DATA_ROOT + `Default.db`
 	case "darwin":
-		FS_ROOT = os.ExpandEnv(`$HOME/Library/Conoid/`)
-		DEFAULT_DB = FS_ROOT + `Default.db`
+		DATA_ROOT = os.ExpandEnv(`$HOME/Library/Application Support/conoid/`)
+		DEFAULT_DB = DATA_ROOT + `default.db`
 	default:
-		FS_ROOT = os.ExpandEnv(`/var/lib/conoid/`)
-		DEFAULT_DB = FS_ROOT + `default.db`
+		DATA_ROOT = os.ExpandEnv(`/var/lib/conoid/`)
+		DEFAULT_DB = DATA_ROOT + `default.db`
 	}
 }

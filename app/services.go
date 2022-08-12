@@ -12,8 +12,8 @@ import (
 )
 
 type (
-	// A map to store running apps, the key represents incoming network address,
-	// and the value as the server's address
+	// A map to store running services, the key represents local server,
+	// and the value as the remote server's address
 	RunningServices map[string][]string
 
 	Services struct {
@@ -108,8 +108,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 				"remote_server": host.FullURL(),
 			})
 			if err != nil {
-				log.Println("Error updating tunnel state:", err)
-				continue
+				panic(err)
 			}
 		}
 	}

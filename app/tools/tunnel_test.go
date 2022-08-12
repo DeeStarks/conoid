@@ -1,7 +1,6 @@
 package tools_test
 
 import (
-	"log"
 	"net"
 	"testing"
 	"time"
@@ -22,10 +21,9 @@ func TestTunnel(t *testing.T) {
 	openConns := make(chan net.Conn, len(tests)*2)
 
 	// Create main server
-	mSrv, err := net.Listen("tcp", "30000")
+	mSrv, err := net.Listen("tcp", ":30000")
 	if err != nil {
-		log.Println(err)
-		return
+		t.Error(err)
 	}
 
 	for _, tc := range tests {
@@ -38,15 +36,9 @@ func TestTunnel(t *testing.T) {
 		// Open tunnel
 		svr, err := net.Listen("tcp", tc.svr)
 		if err != nil {
-			log.Println(err)
-			break
+			t.Error(err)
 		}
 		h.OpenTunnel(mSrv.Addr().String(), []string{svr.Addr().String()})
-	}
-
-	a := true
-	if a {
-		t.Error("All conns connected")
 	}
 
 L:
@@ -57,7 +49,6 @@ L:
 			if err != nil {
 				t.Error("Error closing connection", err)
 			}
-			log.Printf("%s stopping", conn.LocalAddr().String())
 		case <-time.After(time.Second * 5):
 			break L
 		}

@@ -49,7 +49,7 @@ func (c *ServiceCommand) ListRunning() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "TYPE", "SERVERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "TYPE", "LISTENING ON", "ROOT", "REMOTE ADDRESS", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -83,7 +83,7 @@ func (c *ServiceCommand) ListAll() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "STATUS", "TYPE", "SERVERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENING ON", "ROOT", "REMOTE ADDRESS", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -108,25 +108,11 @@ func (c *ServiceCommand) ListAll() {
 }
 
 // Add new service
-func (c *ServiceCommand) Add(filepath string, update bool) {
-	// Ensure the file exists
-	f, err := os.Open(filepath)
-	if err != nil {
-		fmt.Println("No file named: \"conoid.yml\"")
-		return
-	}
-	defer f.Close()
-
-	conf, err := utils.DeserializeConf(f)
-	if err != nil {
-		fmt.Println("Error deserializing configuration file:", err)
-		return
-	}
-
+func (c *ServiceCommand) Add(conf utils.AppConf, update bool) {
 	// Vallidate configuration
 	validatedConf, err := utils.ValidateConf(conf)
 	if err != nil {
-		fmt.Println("Invalid configuration file:", err)
+		fmt.Println(err)
 		return
 	}
 
@@ -143,7 +129,7 @@ func (c *ServiceCommand) Add(filepath string, update bool) {
 	for _, p := range processes {
 		if p.Name == validatedConf.Name {
 			if !update {
-				fmt.Printf("A service already exists with the name \"%s\"; Use the \"--update\" flag to modify service\n", validatedConf.Name)
+				fmt.Printf("A service already exists with the name \"%s\"; Use \"conoid update --name %s [flags]\" to modify service\n", validatedConf.Name, validatedConf.Name)
 				return
 			}
 
@@ -197,7 +183,7 @@ func (c *ServiceCommand) Add(filepath string, update bool) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Your service was successfully added. Restart conoid to start accepting request")
+		fmt.Println("Your service was successfully added. Restart conoid to start accepting requests")
 	} else {
 		// Updating service
 		_, err := domainPort.ServiceProcesses().Update(serviceToUpdate, mapConf)
@@ -239,7 +225,7 @@ func (c *ServiceCommand) Get(name string) {
 	if service.Type == "static" {
 		t.AddRow("DOCUMENT ROOT", service.RootDirectory)
 	}
-	t.AddRow("REMOTE SERVER", service.RemoteServer)
+	t.AddRow("REMOTE ADDRESS", service.RemoteServer)
 	t.AddRow("TUNNELLED", tunnelled)
 	t.AddRow("CREATED", utils.TimeAgo(service.CreatedAt, time.Now().Unix()))
 	t.Render()
@@ -269,4 +255,30 @@ func (c *ServiceCommand) Start(name string) {
 		panic(err)
 	}
 	fmt.Printf("%s: service restarted. Restart conoid server to synchronize update\n", name)
+}
+
+// Stop a running servive
+func (c *ServiceCommand) Stop(name string) {
+	// Retrieve from db
+	domainPort := port.NewDomainPort(c.defaultDB)
+	service, err := domainPort.ServiceProcesses().Get(name)
+	if err != nil {
+		fmt.Printf("No such service: \"%s\"\n", name)
+		return
+	}
+
+	// Check if service is already running
+	if !service.Status {
+		fmt.Println("Service stopped")
+		return
+	}
+
+	// Change status
+	_, err = domainPort.ServiceProcesses().Update(name, map[string]interface{}{
+		"status": 0,
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Service stopped")
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -11,38 +12,40 @@ import (
 )
 
 // Create and setup dependencies
-func SetupDeps() {
+func SetupDeps() error {
 	// 1. Setup the data root directory
-	if _, err := os.Stat(config.FS_ROOT); os.IsNotExist(err) {
-		err := os.Mkdir(config.FS_ROOT, os.ModePerm)
+	if _, err := os.Stat(config.DATA_ROOT); os.IsNotExist(err) {
+		err := os.Mkdir(config.DATA_ROOT, os.ModePerm)
 		if err != nil {
-			log.Println(err)
-			return
+			return err
 		}
 	}
 
 	// 2. Create the default database
 	if _, err := os.Stat(config.DEFAULT_DB); os.IsNotExist(err) {
 		// Create if doesn't exist
-		f, err := os.OpenFile(config.DEFAULT_DB, os.O_RDONLY|os.O_CREATE, 0644)
+		f, err := os.OpenFile(config.DEFAULT_DB, os.O_RDWR|os.O_CREATE, 0777)
 		if err != nil {
-			log.Printf("Error creating db file: %s; Error: %v\n", config.DEFAULT_DB, err)
-			return
+			return fmt.Errorf("error creating db file: %s; Error: %v", config.DEFAULT_DB, err)
 		}
 		f.Close()
 
 		// Migrate db schema
 		err = utils.Sqlite3ScriptMigrate(config.DEFAULT_DB, schemas.DefaultScript)
 		if err != nil {
-			log.Println("Error migrating schema:", err)
-			return
+			return fmt.Errorf("error migrating schema: %v", err)
 		}
 	}
+	return nil
 }
 
 func main() {
 	// Setup dependencies during installation
-	SetupDeps()
+	err := SetupDeps()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	// Start process based on command argument
 	cmd.Execute()
