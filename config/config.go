@@ -6,9 +6,6 @@ import (
 )
 
 const (
-	// App info
-	VERSION = "0.0.1"
-
 	// Network
 	TCP_PORT       = 5000
 	MAX_CONN_COUNT = 100

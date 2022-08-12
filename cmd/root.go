@@ -18,14 +18,8 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "conoid",
 		Short: "Conoid is a reverse proxy server that can also expose your localhost on the internet",
-		Long:  fmt.Sprintf("CONOID (%s)\nA reverse proxy server with load balancer and caching feature.\nIt also uses localtunnel to help you easily expose web services on your\nlocal development machine without messing with DNS and firewall settings", config.VERSION),
+		Long:  "CONOID:\nA simple HTTP server that can be used to serve static files. \nIt also provides TCP tunnelling through localtunnel to bypass a firewall or NAT,\nwhich enables local development servers be exposed to the internet.",
 		Run: func(cmd *cobra.Command, args []string) {
-			// Print version
-			if v, _ := cmd.Flags().GetBool("version"); v {
-				fmt.Println(config.VERSION)
-				return
-			}
-
 			// Connect to the default db
 			defaultDB, err := sql.Open("sqlite3", config.DEFAULT_DB)
 			if err != nil {
@@ -81,21 +75,7 @@ var (
 			fmt.Println("Done!")
 		},
 	}
-
-	versionCmd = &cobra.Command{
-		Use:   "version",
-		Short: "Current conoid version",
-		Long:  `All software has versions. This is Conoid's`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(config.VERSION)
-		},
-	}
 )
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.Flags().BoolP("version", "v", false, "conoid version")
-}
 
 func Execute() {
 	rootCmd.Execute()
