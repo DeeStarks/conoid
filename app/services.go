@@ -68,7 +68,6 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			if err != nil {
 				log.Println("Could not update service state:", err)
 			}
-			s.running[service.RemoteServer] = []string{addr}
 			serverAddrs = []string{addr}
 		} else {
 			servers := []string{}
@@ -76,7 +75,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			for _, addr := range service.Listeners {
 				_, err := s.ConnectToServer(addr)
 				if err != nil {
-					log.Printf("Could not connect to: %s; Stopping...\n", addr)
+					log.Printf("Could not connect to \"%s\" at: %s; Stopping...\n", service.Name, addr)
 					// Update service state
 					dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
 						"status": 0,
@@ -86,7 +85,6 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 				// Append servers to listening servers
 				servers = append(servers, addr)
 			}
-			s.running[service.RemoteServer] = servers
 			serverAddrs = servers
 		}
 
@@ -99,8 +97,13 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 				continue
 			}
 
+			connectedAddressCh := make(chan string, 1)
 			for i := 0; i < host.MaxConnectionCount(); i++ {
-				go host.OpenTunnel(fmt.Sprintf("%s:%s", conoidHost, conoidPort), serverAddrs)
+				go host.OpenTunnel(fmt.Sprintf("%s:%s", conoidHost, conoidPort), connectedAddressCh)
+
+				// Block till the local address connected to the remote server is sent
+				localConn := <-connectedAddressCh
+				s.running[localConn] = serverAddrs
 			}
 
 			// Update service's remote_server

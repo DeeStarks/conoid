@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 
 	"github.com/DeeStarks/conoid/app/tools"
 	"github.com/DeeStarks/conoid/config"
@@ -34,7 +35,6 @@ func NewServer(connCh chan<- net.Conn, defaultDB *sql.DB) *Server {
 func (s *Server) process(conn net.Conn) {
 	// Get the servers
 	addrs := s.services.GetServiceServers(conn.RemoteAddr().String())
-	// log.Println(conn.RemoteAddr().String())
 	if len(addrs) <= 0 {
 		// If the remote address is unknown, redirect to the welcome server
 		addrs = s.services.GetServiceServers(fmt.Sprintf("%s:%s", s.host, s.port))
@@ -81,7 +81,7 @@ func (s *Server) Serve() {
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", config.TCP_PORT))
 	if err != nil {
 		log.Println(err)
-		return
+		os.Exit(1)
 	}
 	host, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
@@ -90,11 +90,11 @@ func (s *Server) Serve() {
 	}
 	s.host = host
 	s.port = port
-	log.Printf("Conoid listening on host: %s, port %s\n", host, port)
 
 	// Start running services
 	s.services.ServeServices(host, port, s.openConns)
 
+	log.Printf("Conoid listening on host: %s, port %s\n", host, port)
 	// Record connections to ensure it doesn't exceed the max size
 	connsCh := make(chan int, config.MAX_CONN_COUNT)
 

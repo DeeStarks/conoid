@@ -34,11 +34,12 @@ func TestTunnel(t *testing.T) {
 		}
 
 		// Open tunnel
-		svr, err := net.Listen("tcp", tc.svr)
+		_, err = net.Listen("tcp", tc.svr)
 		if err != nil {
 			t.Error(err)
 		}
-		h.OpenTunnel(mSrv.Addr().String(), []string{svr.Addr().String()})
+		remoteAddrCh := make(chan string, 1)
+		h.OpenTunnel(mSrv.Addr().String(), remoteAddrCh)
 	}
 
 L:

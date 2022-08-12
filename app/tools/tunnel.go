@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"io/ioutil"
 	"log"
@@ -24,7 +25,7 @@ type (
 	}
 
 	ITunnelHost interface {
-		OpenTunnel(string, []string)
+		OpenTunnel(string, chan<- string)
 		SubDomain() string
 		FullURL() string
 		MaxConnectionCount() int
@@ -78,7 +79,7 @@ func (t *tunnel) AllocateHost() (ITunnelHost, error) {
 	return &host, nil
 }
 
-func (h *allocatedHost) OpenTunnel(conoidServer string, serviceServers []string) {
+func (h *allocatedHost) OpenTunnel(conoidServer string, connectedAddressCh chan<- string) {
 	// Connect to server
 	localConn, err := net.Dial("tcp", conoidServer)
 	if err != nil {
@@ -103,14 +104,25 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, serviceServers []string)
 	// Add to open connections
 	h.openConns <- remoteConn
 
-	// log.Println(localConn.LocalAddr().String(), "===>", serviceServers)
+	// Send the address connected to localtunnel, to allow
+	// conoid server know the local connection it is to connect
+	connectedAddressCh <- localConn.LocalAddr().String()
+
+	// This will check if a connection is closed
+	// to stop goroutine from accepting more requests
+	var isClosedConn = func(err error) bool {
+		return strings.Contains(err.Error(), ": use of closed network connection")
+	}
 
 	// Establish a point-to-point connection between remote server and the local server
 	go func() {
 		for {
 			_, err = io.Copy(localConn, remoteConn)
 			if err != nil {
-				break
+				if isClosedConn(err) {
+					return
+				}
+				log.Println(err)
 			}
 		}
 	}()
@@ -119,7 +131,10 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, serviceServers []string)
 		for {
 			_, err = io.Copy(remoteConn, localConn)
 			if err != nil {
-				break
+				if isClosedConn(err) {
+					return
+				}
+				log.Println(err)
 			}
 		}
 	}()

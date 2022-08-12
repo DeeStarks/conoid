@@ -86,20 +86,20 @@ func TestValidateConf(t *testing.T) {
 		},
 		{
 			conf: utils.AppConf{
-				Name:          "test3",
-				Type:          "static",
+				Name: "test3",
+				Type: "static",
 				Listeners: []string{
 					"127.0.0.1:8000",
 				},
-				Tunnelled:     true,
+				Tunnelled: true,
 			},
 			expected: utils.AppConf{},
 		},
 		{
 			conf: utils.AppConf{
-				Name:          "test3",
-				Type:          "static",
-				Tunnelled:     true,
+				Name:      "test3",
+				Type:      "static",
+				Tunnelled: true,
 			},
 			expected: utils.AppConf{},
 		},
