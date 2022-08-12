@@ -1,9 +1,9 @@
 # CONOID
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![forthebadge](https://forthebadge.com/images/badges/made-with-go.svg)](https://forthebadge.com)
 
-![conoid icon](./assets/welcome/img/icon.png)
+
+<img src="./assets/welcome/img/icon.png" width="100">
 
 ---
 
@@ -13,7 +13,7 @@ While you can expose as many local servers as you want, conoid connects to the [
 
 ## Architecture
 
-![conoid architecture](https://drive.google.com/file/d/1Kl-I6rShVYIN8RxFXvMijDxWiPG3k9Xy/view?usp=sharing)
+<img src="./assets/imgs/architecture.png">
 
 ## Installation
 
