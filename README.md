@@ -1,5 +1,6 @@
 # CONOID
 
+[![Release](https://github.com/DeeStarks/conoid/actions/workflows/release.yml/badge.svg)](https://github.com/DeeStarks/conoid/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub tag](https://img.shields.io/github/tag/deestarks/conoid.svg)](https://github.com/deestarks/conoid/releases/latest)
 
