@@ -1,5 +1,6 @@
 # CONOID
 
+![CI](https://github.com/deestarks/conoid/workflows/Continuous%20Integration/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub tag](https://img.shields.io/github/tag/deestarks/conoid.svg)](https://github.com/deestarks/conoid/releases/latest)
 
