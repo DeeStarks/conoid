@@ -35,15 +35,15 @@ conoid ps -a
 ### Expose a server
 ```
 conoid add \
-    --name your_app_name --type server \
-    --listener your_server_addr --tunnel
+    --name <your_app_name> --type server \
+    --listener <your_server_addr> --tunnel
 ```
 
 ### Serving static files
 ```
 conoid add \
-    --name your_app_name --type static \
-    --directory document_directory
+    --name <your_app_name> --type static \
+    --directory <document_directory>
 ```
 
 or add the `--tunnel` flag to expose to the internet
