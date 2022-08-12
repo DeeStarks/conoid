@@ -18,7 +18,6 @@ type (
 
 	Services struct {
 		running   RunningServices
-		nextPN    int // Next available port number
 		defaultDB *sql.DB
 	}
 
@@ -27,14 +26,13 @@ type (
 		GetRunningServices() RunningServices           // Get all running Services
 		GetServiceServers(string) []string             // Get all servers' address that a service runs on
 		ConnectToServer(string) (net.Conn, error)      // Connect to a service running locally
-		ServeStatic(string) (string, string)           // Serve static Services, and return their port numbers
+		ServeStatic(string, int) (string, string)           // Serve static Services, and return their port numbers
 	}
 )
 
 func InitServices(defaultDB *sql.DB) IServices {
 	return &Services{
 		running:   RunningServices{},
-		nextPN:    12000, // New servers will listen on port number :12000 and above for static apps
 		defaultDB: defaultDB,
 	}
 }
@@ -42,7 +40,7 @@ func InitServices(defaultDB *sql.DB) IServices {
 // Retrieve all Services and serve
 func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- net.Conn) {
 	// Serve the welcome page
-	welcomeHost, welcomePort := s.ServeStatic("./assets/welcome/")
+	welcomeHost, welcomePort := s.ServeStatic("./assets/welcome/", 30000)
 	// Set the welcome page as the werver's default page
 	s.running[fmt.Sprintf("%s:%s", conoidHost, conoidPort)] = []string{fmt.Sprintf("%s:%s", welcomeHost, welcomePort)}
 
@@ -54,13 +52,14 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 		return
 	}
 
+	portNo := 30001
 	for _, service := range services {
 		// Addresses the service is running on
 		var serverAddrs []string
 
 		if service.Type == "static" {
 			// Serve static
-			host, port := s.ServeStatic(service.RootDirectory)
+			host, port := s.ServeStatic(service.RootDirectory, portNo)
 			addr := fmt.Sprintf("%s:%s", host, port)
 			_, err := dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
 				"listeners": addr,
@@ -69,6 +68,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 				log.Println("Could not update service state:", err)
 			}
 			serverAddrs = []string{addr}
+			portNo++ // Increment the port number for nexe usage
 		} else {
 			servers := []string{}
 			// Connect to all listening servers
@@ -93,7 +93,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			tunnel := tools.NewTunnel(service.Name, connCh)
 			host, err := tunnel.AllocateHost()
 			if err != nil {
-				log.Println("Error allocating tunnel remote host. Ensure your device is connected to the internet")
+				log.Println("Error opening tunnel. Ensure your device is connected to the internet")
 				continue
 			}
 
@@ -137,25 +137,18 @@ func (s *Services) ConnectToServer(addr string) (net.Conn, error) {
 }
 
 // Serve static Services, and return their port numbers
-func (s *Services) ServeStatic(dir string) (string, string) {
+func (s *Services) ServeStatic(dir string, port int) (string, string) {
 	fs := http.FileServer(http.Dir(dir))
 	mux := http.NewServeMux()
 	mux.Handle("/", fs)
 
 	// Get and listen on the next port number
-	host := "0.0.0.0"
-	port := s.nextPN
-	for {
-		// Dial the port number to see if it's available
-		_, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
-		if err != nil {
-			// If it's not in use, serve
-			go http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), mux)
-			break
-		}
-		// If it's already in use, try the next port
-		port++
+	host := "localhost"
+	// Dial the port number to see if it's available
+	_, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+	if err != nil {
+		// If it's not in use, serve
+		go http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), mux)
 	}
-	s.nextPN = port
 	return host, fmt.Sprintf("%d", port)
 }
