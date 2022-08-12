@@ -49,7 +49,7 @@ func (c *ServiceCommand) ListRunning() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "TYPE", "LISTENERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "TYPE", "SERVERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -83,7 +83,7 @@ func (c *ServiceCommand) ListAll() {
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 
-	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
+	t.SetHeaders("NAME", "STATUS", "TYPE", "SERVERS", "ROOT", "REMOTE SERVER", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
 		listeners := strings.Join(p.Listeners, ", ")
@@ -235,7 +235,7 @@ func (c *ServiceCommand) Get(name string) {
 	t.AddRow("NAME", service.Name)
 	t.AddRow("STATUS", status)
 	t.AddRow("TYPE", strings.Title(service.Type)+" rendering")
-	t.AddRow("LISTENING ON", strings.Join(service.Listeners, ", "))
+	t.AddRow("SERVING FROM", strings.Join(service.Listeners, ", "))
 	if service.Type == "static" {
 		t.AddRow("DOCUMENT ROOT", service.RootDirectory)
 	}
@@ -243,4 +243,30 @@ func (c *ServiceCommand) Get(name string) {
 	t.AddRow("TUNNELLED", tunnelled)
 	t.AddRow("CREATED", utils.TimeAgo(service.CreatedAt, time.Now().Unix()))
 	t.Render()
+}
+
+// Start a stopped servive
+func (c *ServiceCommand) Start(name string) {
+	// Retrieve from db
+	domainPort := port.NewDomainPort(c.defaultDB)
+	service, err := domainPort.ServiceProcesses().Get(name)
+	if err != nil {
+		fmt.Printf("No such service: \"%s\"\n", name)
+		return
+	}
+
+	// Check if service is already running
+	if service.Status {
+		fmt.Printf("Can't restart a running service: \"%s\"\n", service.Name)
+		return
+	}
+
+	// Change status
+	_, err = domainPort.ServiceProcesses().Update(name, map[string]interface{}{
+		"status": 1,
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s: service restarted. Restart conoid server to synchronize update\n", name)
 }

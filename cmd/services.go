@@ -48,10 +48,11 @@ var (
 				services.Add(pathToConf, true)
 				return
 			}
+			fmt.Println("No flags specified. Execute \"conoid service -h\" for help")
 		},
 	}
 
-	// Application processes sub-command
+	// Services processes sub-command
 	servicePsCmd = &cobra.Command{
 		Use:   "ps",
 		Short: "List running services",
@@ -77,6 +78,26 @@ var (
 			}
 		},
 	}
+
+	// Service restart
+	serviceStartCmd = &cobra.Command{
+		Use:   "start",
+		Short: "Restart a stopped service",
+		Long:  "Restart a stopped service",
+		Run: func(cmd *cobra.Command, args []string) {
+			// If the "all" flag is passed, list all processes
+			flags := cmd.Flags()
+
+			// Initialize "service" commands
+			services := cli.NewCLICommands().Services()
+
+			if f, _ := flags.GetString("name"); f != "" {
+				services.Start(f)
+				return
+			}
+			fmt.Println("No flags specified. Execute \"conoid start -h\" for help")
+		},
+	}
 )
 
 func init() {
@@ -89,4 +110,8 @@ func init() {
 	serviceCmd.AddCommand(servicePsCmd)
 	servicePsCmd.Flags().BoolP("all", "a", false, "list all services")
 	servicePsCmd.Flags().StringP("name", "n", "", "show details of a service")
+
+	// serviceStartCmd
+	serviceCmd.AddCommand(serviceStartCmd)
+	serviceStartCmd.Flags().StringP("name", "n", "", "name of service to restart")
 }
