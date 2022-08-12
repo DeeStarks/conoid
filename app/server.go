@@ -13,52 +13,54 @@ import (
 )
 
 type Server struct {
-	apps      IServices
+	services  IServices
 	defaultDB *sql.DB
+	host      string
+	port      string
+	openConns chan<- net.Conn
 }
 
-func NewServer() *Server {
-	// Connect to the default db
-	defaultDB, err := sql.Open("sqlite3", config.DEFAULT_DB)
-	if err != nil {
-		log.Panicln("Could not connect DB:", err)
-	}
-
+func NewServer(connCh chan<- net.Conn, defaultDB *sql.DB) *Server {
 	// initialize and start running Services
-	apps := InitServices(defaultDB)
-	apps.ServeServices()
+	services := InitServices(defaultDB)
 
 	return &Server{
-		apps:      apps,
+		services:  services,
 		defaultDB: defaultDB,
+		openConns: connCh,
 	}
 }
 
 func (s *Server) process(conn net.Conn) {
 	// Get the servers
-	addrs := s.apps.GetServiceServers(conn.RemoteAddr().String())
+	addrs := s.services.GetServiceServers(conn.RemoteAddr().String())
+	// log.Println(conn.RemoteAddr().String())
 	if len(addrs) <= 0 {
 		// If the remote address is unknown, redirect to the welcome server
-		addrs = s.apps.GetServiceServers("[::1]:80")
+		addrs = s.services.GetServiceServers(fmt.Sprintf("%s:%s", s.host, s.port))
 	}
 
-	// Get next server from load balancer
+	// TODO:
+	// The idea for the load balancer isn't fully formed yet.
+	// For now, it's always going to select the first server for every connection
 	lb := tools.NewLoadBalancer(addrs)
 	addr := lb.GetNextServer()
 
 	// Connect to the available server
-	localConn, err := s.apps.ConnectToServer(addr)
+	localConn, err := s.services.ConnectToServer(addr)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	// Add local conn to open connections channel
+	s.openConns <- localConn
 
 	// Establish a point-to-point connection between conoid server and app's local server
 	go func() {
 		for {
 			_, err = io.Copy(localConn, conn)
 			if err != nil {
-				log.Println("Failed to read from remote connection:", err)
 				break
 			}
 		}
@@ -68,7 +70,6 @@ func (s *Server) process(conn net.Conn) {
 		for {
 			_, err = io.Copy(conn, localConn)
 			if err != nil {
-				log.Println("Failed to write to remote connection:", err)
 				break
 			}
 		}
@@ -77,20 +78,41 @@ func (s *Server) process(conn net.Conn) {
 
 func (s *Server) Serve() {
 	// Start the server and wait for connections
-	listener, err := net.Listen("tcp", fmt.Sprintf("[::]:%d", config.TCP_PORT))
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", config.TCP_PORT))
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Printf("Conoid started and listening on port %d\n", config.TCP_PORT)
+	host, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	s.host = host
+	s.port = port
+	log.Printf("Conoid listening on host: %s, port %s\n", host, port)
+
+	// Start running services
+	s.services.ServeServices(host, port, s.openConns)
+
+	// Record connections to ensure it doesn't exceed the max size
+	connsCh := make(chan int, config.MAX_CONN_COUNT)
 
 	for {
+		// Block if connections count it full
+		connsCh <- 1
+
 		// Establish a point-to-point connection between the client and server
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("Connection failed:", err)
+			// Remove record
+			<-connsCh
 			continue
 		}
+
+		// Add to open connections
+		s.openConns <- conn
 
 		// Handle connection in a new goroutine
 		go s.process(conn)

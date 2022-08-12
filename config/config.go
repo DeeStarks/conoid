@@ -10,7 +10,8 @@ const (
 	VERSION = "0.0.1"
 
 	// Network
-	TCP_PORT = 80
+	TCP_PORT       = 80
+	MAX_CONN_COUNT = 100
 )
 
 var (
