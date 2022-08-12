@@ -1,0 +1,49 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+
+archives:
+  - replacements:
+      darwin: macOS
+      linux: Linux
+      386: 32-bit
+      amd64: 64-bit
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  -
+    name: conoid
+    tap:
+      owner: deestarks
+      name: homebrew-tap
+      branch: master
+    folder: Formula
+    description: "A simple HTTP server that can be used to serve static files. It also provides TCP tunnelling through https://localtunnel.me to bypass a firewall or NAT, enabling local development servers to be exposed to the internet."
+    license: "MIT"
+
+snapcrafts:
+  -
+    publish: true
+    summary: Expose your local server to the internet.
+    description: "A simple HTTP server that can be used to serve static files. It also provides TCP tunnelling through https://localtunnel.me to bypass a firewall or NAT, enabling local development servers to be exposed to the internet."
+    license: MIT
+
+release:
+  github:
+    owner: deestarks
+    name: conoid
