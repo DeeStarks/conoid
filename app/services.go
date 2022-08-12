@@ -26,7 +26,7 @@ type (
 		GetRunningServices() RunningServices           // Get all running Services
 		GetServiceServers(string) []string             // Get all servers' address that a service runs on
 		ConnectToServer(string) (net.Conn, error)      // Connect to a service running locally
-		ServeStatic(string, int) (string, string)           // Serve static Services, and return their port numbers
+		ServeStatic(string, int) (string, string)      // Serve static Services, and return their port numbers
 	}
 )
 
