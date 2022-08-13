@@ -20,6 +20,14 @@ var (
 		Short: "Conoid is a reverse proxy server that can also expose your localhost on the internet",
 		Long:  "CONOID:\nA simple HTTP server that can be used to serve static files. \nIt also provides TCP tunnelling through localtunnel to bypass a firewall or NAT,\nenabling local development servers be exposed to the internet.",
 		Run: func(cmd *cobra.Command, args []string) {
+			flags := cmd.Flags()
+
+			// Show version
+			if f, _ := flags.GetBool("version"); f {
+				fmt.Println(config.CURRENT_VERSION)
+				return
+			}
+
 			// Connect to the default db
 			defaultDB, err := sql.Open("sqlite3", config.DEFAULT_DB)
 			if err != nil {
@@ -78,5 +86,10 @@ var (
 )
 
 func Execute() {
+	// Version
+	rootCmd.PersistentFlags().BoolP("version", "v", false, "Show version")
+
+	// Execute
 	rootCmd.Execute()
+
 }
