@@ -9,7 +9,7 @@
 
 ---
 
-Conoid is a simple HTTP server that can serve static files as well as a TCP tunneling tool that uses [localtunnel](http://localtunnel.me/) to bypass a firewall or NAT and expose your local development server to the internet.
+Conoid is a TCP tunneling tool that uses [localtunnel](http://localtunnel.me/) to bypass a firewall or NAT and expose your local development server to the internet, as well as a simple HTTP server that can be used to serve static files.
 
 While you can expose as many local servers as you want, conoid connects to the [localtunnel](http://localtunnel.me/) server only on a single port - **5000**, and directs traffic to your servers based on a mapping created while making the initail connections.
 
