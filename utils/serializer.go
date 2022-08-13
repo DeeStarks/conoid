@@ -10,11 +10,12 @@ import (
 )
 
 type AppConf struct {
-	Name          string   `json:"name"`                     // Name of application
-	Type          string   `json:"type"`                     // "server" or "static"
-	Listeners     []string `json:"listeners,omitempty"`      // Load will be automatically balanced across listners. Required if "Renderer" is "server"
-	RootDirectory string   `json:"root_directory,omitempty"` // Path to root directory. Required for "static" rendering
-	Tunnelled     bool     `json:"tunnelled"`                // Share service to the internet
+	Name          string   `json:"name"`         // Name of application
+	Type          string   `json:"type"`         // "server" or "static"
+	Listeners     []string `json:"listeners"`    // Required if "Renderer" is "server"
+	RootDirectory string   `json:"root"`         // Path to root directory. Required for "static" rendering
+	Tunnelled     bool     `json:"is_tunnelled"` // Share service to the internet
+	Server        string   `json:"server"`       // Leave empty. If tunnelled, the domain name will be automatically added
 }
 
 // Validate and fix errors in configuration

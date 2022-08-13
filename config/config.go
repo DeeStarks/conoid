@@ -7,7 +7,7 @@ import (
 
 const (
 	// App info
-	CURRENT_VERSION = "v0.0.2"
+	CURRENT_VERSION = "v0.0.3"
 
 	// Network
 	TCP_PORT       = 5000
@@ -16,10 +16,10 @@ const (
 
 var (
 	// File System
-	DATA_ROOT  string // Data storage
-	LOGS_ROOT  string // Log files
-	SERVICE_LOGS  string // Log files
-	DEFAULT_DB string // Database to use by default
+	DATA_ROOT    string // Data storage
+	LOGS_ROOT    string // Log files
+	SERVICE_LOGS string // Log files
+	DEFAULT_DB   string // Database to use by default
 )
 
 func init() {
@@ -28,16 +28,16 @@ func init() {
 		DATA_ROOT = os.ExpandEnv(`C:\Program Files\Conoid\`)
 		LOGS_ROOT = DATA_ROOT + `logs`
 		SERVICE_LOGS = DATA_ROOT + `logs\services.log`
-		DEFAULT_DB = DATA_ROOT + `Default.db`
+		DEFAULT_DB = DATA_ROOT + `services.json`
 	case "darwin":
 		DATA_ROOT = os.ExpandEnv(`$HOME/Library/Application Support/conoid/`)
 		LOGS_ROOT = DATA_ROOT + `logs`
 		SERVICE_LOGS = DATA_ROOT + `logs/services.log`
-		DEFAULT_DB = DATA_ROOT + `default.db`
+		DEFAULT_DB = DATA_ROOT + `services.json`
 	default:
 		DATA_ROOT = os.ExpandEnv(`/var/lib/conoid/`)
 		LOGS_ROOT = DATA_ROOT + `logs`
 		SERVICE_LOGS = DATA_ROOT + `logs/services.log`
-		DEFAULT_DB = DATA_ROOT + `default.db`
+		DEFAULT_DB = DATA_ROOT + `services.json`
 	}
 }

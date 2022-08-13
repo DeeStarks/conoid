@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"net"
 	"net/http"
@@ -17,8 +16,7 @@ type (
 	RunningServices map[string][]string
 
 	Services struct {
-		running   RunningServices
-		defaultDB *sql.DB
+		running RunningServices
 	}
 
 	IServices interface {
@@ -30,10 +28,9 @@ type (
 	}
 )
 
-func InitServices(defaultDB *sql.DB) IServices {
+func InitServices() IServices {
 	return &Services{
-		running:   RunningServices{},
-		defaultDB: defaultDB,
+		running: RunningServices{},
 	}
 }
 
@@ -45,7 +42,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 	s.running[fmt.Sprintf("%s:%s", conoidHost, conoidPort)] = []string{fmt.Sprintf("%s:%s", welcomeHost, welcomePort)}
 
 	// Serve registered running services
-	dbPort := port.NewDomainPort(s.defaultDB)
+	dbPort := port.NewDomainPort()
 	services, err := dbPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
 		utils.Log("Could not serve:", err)
@@ -62,7 +59,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			host, port := s.ServeStatic(service.RootDirectory, portNo)
 			addr := fmt.Sprintf("%s:%s", host, port)
 			_, err := dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
-				"listeners": addr,
+				"listeners": []string{addr},
 			})
 			if err != nil {
 				utils.Log("Could not update service state:", err)
@@ -73,17 +70,17 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			servers := []string{}
 			// Connect to all listening servers
 			for _, addr := range service.Listeners {
-				_, err := s.ConnectToServer(addr)
+				_, err := s.ConnectToServer(addr.(string))
 				if err != nil {
 					utils.Logf("Could not connect to \"%s\" at: %s; Stopping...\n", service.Name, addr)
 					// Update service state
 					dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
-						"status": 0,
+						"status": false,
 					})
 					continue
 				}
 				// Append servers to listening servers
-				servers = append(servers, addr)
+				servers = append(servers, addr.(string))
 			}
 			serverAddrs = servers
 		}
@@ -108,7 +105,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 
 			// Update service's remote_server
 			_, err = dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
-				"remote_server": host.FullURL(),
+				"server": host.FullURL(),
 			})
 			if err != nil {
 				panic(err)

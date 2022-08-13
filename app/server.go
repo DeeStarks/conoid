@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"net"
@@ -10,24 +9,21 @@ import (
 	"github.com/DeeStarks/conoid/app/tools"
 	"github.com/DeeStarks/conoid/config"
 	"github.com/DeeStarks/conoid/utils"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type Server struct {
 	services  IServices
-	defaultDB *sql.DB
 	host      string
 	port      string
 	openConns chan<- net.Conn
 }
 
-func NewServer(connCh chan<- net.Conn, defaultDB *sql.DB) *Server {
+func NewServer(connCh chan<- net.Conn) *Server {
 	// initialize and start running Services
-	services := InitServices(defaultDB)
+	services := InitServices()
 
 	return &Server{
 		services:  services,
-		defaultDB: defaultDB,
 		openConns: connCh,
 	}
 }

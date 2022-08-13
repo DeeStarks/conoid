@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"net"
 	"os"
@@ -28,15 +27,9 @@ var (
 				return
 			}
 
-			// Connect to the default db
-			defaultDB, err := sql.Open("sqlite3", config.DEFAULT_DB)
-			if err != nil {
-				panic(err)
-			}
-
 			// Get the number of services that are tunnelled
 			var tunnelled int
-			rec, err := port.NewDomainPort(defaultDB).ServiceProcesses().RetrieveRunning()
+			rec, err := port.NewDomainPort().ServiceProcesses().RetrieveRunning()
 			if err != nil {
 				panic(err)
 			}
@@ -55,7 +48,7 @@ var (
 
 			// Start server if no argumentss were passed or the first argument is "up"
 			if len(args) <= 0 || args[0] == "start" {
-				go app.NewServer(openConnsCh, defaultDB).Serve()
+				go app.NewServer(openConnsCh).Serve()
 			}
 
 			// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)

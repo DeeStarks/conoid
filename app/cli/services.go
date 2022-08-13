@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,17 +10,12 @@ import (
 	port "github.com/DeeStarks/conoid/domain/ports"
 	"github.com/DeeStarks/conoid/utils"
 	"github.com/aquasecurity/table"
-	"github.com/google/uuid"
 )
 
-type ServiceCommand struct {
-	defaultDB *sql.DB
-}
+type ServiceCommand struct{}
 
 func (cmd *CLICommands) Services() *ServiceCommand {
-	return &ServiceCommand{
-		defaultDB: cmd.defaultDB,
-	}
+	return &ServiceCommand{}
 }
 
 type ServiceProcess struct {
@@ -29,7 +23,7 @@ type ServiceProcess struct {
 	Name          string
 	Status        string
 	Type          string
-	Listeners     []string
+	Listeners     []interface{}
 	RootDirectory string
 	RemoteServer  string
 	Tunnelled     bool
@@ -38,10 +32,10 @@ type ServiceProcess struct {
 
 // List running services
 func (c *ServiceCommand) ListRunning() {
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	processes, err := domainPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
-		fmt.Println("Error retrieve running services:", err)
+		fmt.Println("Error retrieving running services:", err)
 		return
 	}
 
@@ -52,7 +46,12 @@ func (c *ServiceCommand) ListRunning() {
 	t.SetHeaders("NAME", "TYPE", "LISTENING ON", "ROOT", "REMOTE ADDRESS", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
-		listeners := strings.Join(p.Listeners, ", ")
+
+		assertListeners := make([]string, len(p.Listeners))
+		for i, l := range p.Listeners {
+			assertListeners[i] = l.(string)
+		}
+		listeners := strings.Join(assertListeners, ", ")
 
 		// Handle booleans
 		tunnelled := "False"
@@ -72,7 +71,7 @@ func (c *ServiceCommand) ListRunning() {
 
 // List all services
 func (c *ServiceCommand) ListAll() {
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
 		fmt.Println("Error retrieving services:", err)
@@ -86,7 +85,12 @@ func (c *ServiceCommand) ListAll() {
 	t.SetHeaders("NAME", "STATUS", "TYPE", "LISTENING ON", "ROOT", "REMOTE ADDRESS", "TUNNELLED", "CREATED")
 	for _, p := range processes {
 		created_at := utils.TimeAgo(p.CreatedAt, time.Now().Unix())
-		listeners := strings.Join(p.Listeners, ", ")
+
+		assertListeners := make([]string, len(p.Listeners))
+		for i, l := range p.Listeners {
+			assertListeners[i] = l.(string)
+		}
+		listeners := strings.Join(assertListeners, ", ")
 
 		// Handle booleans
 		tunnelled := "False"
@@ -117,7 +121,7 @@ func (c *ServiceCommand) Add(conf utils.AppConf, update bool) {
 	}
 
 	// Ensure service doesn't already exist
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	processes, err := domainPort.ServiceProcesses().RetrieveAll()
 	if err != nil {
 		fmt.Println(err)
@@ -156,26 +160,8 @@ func (c *ServiceCommand) Add(conf utils.AppConf, update bool) {
 	var mapConf map[string]interface{}
 	json.Unmarshal(jsondata, &mapConf)
 
-	// Change the "tunnelled" field from boolean type to int
-	if mapConf["tunnelled"].(bool) {
-		mapConf["tunnelled"] = 1
-	} else {
-		mapConf["tunnelled"] = 0
-	}
-
-	// Join the "listeners" slice and save in the database as string type
-	if s, ok := mapConf["listeners"].([]interface{}); ok {
-		ss := make([]string, len(s))
-		for i, v := range s {
-			ss[i] = fmt.Sprintf("%v", v)
-		}
-		mapConf["listeners"] = strings.Join(ss, ", ")
-	}
-
 	if !update {
-		// Generate pid, status, and created at
-		mapConf["pid"] = strings.ReplaceAll(uuid.New().String(), "-", "") // Stripping hyphens
-		mapConf["status"] = 1
+		mapConf["status"] = true
 		mapConf["created_at"] = time.Now().Unix()
 
 		_, err = domainPort.ServiceProcesses().Create(mapConf)
@@ -198,10 +184,10 @@ func (c *ServiceCommand) Add(conf utils.AppConf, update bool) {
 // Retrieve details of a servive
 func (c *ServiceCommand) Get(name string) {
 	// Retrieve from db
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	service, err := domainPort.ServiceProcesses().Get(name)
 	if err != nil {
-		fmt.Printf("Could not retrieve service: \"%s\"\n", name)
+		fmt.Println(err)
 		return
 	}
 
@@ -215,13 +201,20 @@ func (c *ServiceCommand) Get(name string) {
 		status = "Running"
 	}
 
+	// Type assertion on the service listeners: interface{} -> string
+	assertListeners := make([]string, len(service.Listeners))
+	for i, l := range service.Listeners {
+		assertListeners[i] = l.(string)
+	}
+	listeners := strings.Join(assertListeners, ", ")
+
 	// Show table
 	t := table.New(os.Stdout)
 	t.SetDividers(table.UnicodeDividers)
 	t.AddRow("NAME", service.Name)
 	t.AddRow("STATUS", status)
 	t.AddRow("TYPE", strings.Title(service.Type)+" rendering")
-	t.AddRow("SERVING FROM", strings.Join(service.Listeners, ", "))
+	t.AddRow("SERVING FROM", listeners)
 	if service.Type == "static" {
 		t.AddRow("DOCUMENT ROOT", service.RootDirectory)
 	}
@@ -234,7 +227,7 @@ func (c *ServiceCommand) Get(name string) {
 // Start a stopped servive
 func (c *ServiceCommand) Start(name string) {
 	// Retrieve from db
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	service, err := domainPort.ServiceProcesses().Get(name)
 	if err != nil {
 		fmt.Printf("No such service: \"%s\"\n", name)
@@ -249,7 +242,7 @@ func (c *ServiceCommand) Start(name string) {
 
 	// Change status
 	_, err = domainPort.ServiceProcesses().Update(name, map[string]interface{}{
-		"status": 1,
+		"status": true,
 	})
 	if err != nil {
 		panic(err)
@@ -260,7 +253,7 @@ func (c *ServiceCommand) Start(name string) {
 // Stop a running servive
 func (c *ServiceCommand) Stop(name string) {
 	// Retrieve from db
-	domainPort := port.NewDomainPort(c.defaultDB)
+	domainPort := port.NewDomainPort()
 	service, err := domainPort.ServiceProcesses().Get(name)
 	if err != nil {
 		fmt.Printf("No such service: \"%s\"\n", name)
@@ -275,10 +268,11 @@ func (c *ServiceCommand) Stop(name string) {
 
 	// Change status
 	_, err = domainPort.ServiceProcesses().Update(name, map[string]interface{}{
-		"status": 0,
+		"status": false,
 	})
 	if err != nil {
-		panic(err)
+		fmt.Println("Error:", err)
+		return
 	}
 	fmt.Println("Service stopped")
 }

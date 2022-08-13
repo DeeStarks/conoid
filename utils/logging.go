@@ -11,7 +11,7 @@ import (
 func Log(args ...interface{}) {
 	msg := fmt.Sprint(args...)
 	log := fmt.Sprintf("[%v]: %s\r\n", time.Now().Format("2006-01-02 15:04:05"), msg)
-	
+
 	// Add to log file
 	f, err := os.OpenFile(config.SERVICE_LOGS, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {

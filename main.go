@@ -6,7 +6,6 @@ import (
 
 	"github.com/DeeStarks/conoid/cmd"
 	"github.com/DeeStarks/conoid/config"
-	"github.com/DeeStarks/conoid/domain/schemas"
 	"github.com/DeeStarks/conoid/utils"
 )
 
@@ -27,13 +26,9 @@ func SetupDeps() error {
 		if err != nil {
 			return fmt.Errorf("error creating db file: %s; Error: %v", config.DEFAULT_DB, err)
 		}
+		f.Write([]byte("{}")) // Initialize with an empty object
 		f.Close()
 
-		// Migrate db schema
-		err = utils.Sqlite3ScriptMigrate(config.DEFAULT_DB, schemas.DefaultScript)
-		if err != nil {
-			return fmt.Errorf("error migrating schema: %v", err)
-		}
 	}
 
 	// 3. Log root
