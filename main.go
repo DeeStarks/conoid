@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/DeeStarks/conoid/cmd"
@@ -24,7 +23,7 @@ func SetupDeps() error {
 	// 2. Create the default database
 	if _, err := os.Stat(config.DEFAULT_DB); os.IsNotExist(err) {
 		// Create if doesn't exist
-		f, err := os.OpenFile(config.DEFAULT_DB, os.O_RDWR|os.O_CREATE, 0777)
+		f, err := os.OpenFile(config.DEFAULT_DB, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return fmt.Errorf("error creating db file: %s; Error: %v", config.DEFAULT_DB, err)
 		}
@@ -36,6 +35,25 @@ func SetupDeps() error {
 			return fmt.Errorf("error migrating schema: %v", err)
 		}
 	}
+
+	// 3. Log root
+	if _, err := os.Stat(config.LOGS_ROOT); os.IsNotExist(err) {
+		// Create root if doesn't exist
+		err := os.Mkdir(config.LOGS_ROOT, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 4. Service logs
+	if _, err := os.Stat(config.SERVICE_LOGS); os.IsNotExist(err) {
+		// Create if services log file
+		f, err := os.OpenFile(config.SERVICE_LOGS, os.O_CREATE, 0644)
+		if err != nil {
+			return fmt.Errorf("error creating log file: %s; Error: %v", config.SERVICE_LOGS, err)
+		}
+		f.Close()
+	}
 	return nil
 }
 
@@ -43,7 +61,7 @@ func main() {
 	// Setup dependencies during installation
 	err := SetupDeps()
 	if err != nil {
-		log.Println(err)
+		utils.Log(err)
 		return
 	}
 

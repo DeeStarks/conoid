@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 
 	"github.com/DeeStarks/conoid/app/tools"
 	"github.com/DeeStarks/conoid/config"
+	"github.com/DeeStarks/conoid/utils"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -49,7 +49,7 @@ func (s *Server) process(conn net.Conn) {
 	// Connect to the available server
 	localConn, err := s.services.ConnectToServer(addr)
 	if err != nil {
-		log.Println(err)
+		utils.Log(err)
 		return
 	}
 
@@ -80,12 +80,12 @@ func (s *Server) Serve() {
 	// Start the server and wait for connections
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", config.TCP_PORT))
 	if err != nil {
-		log.Println(err)
+		utils.Log(err)
 		os.Exit(1)
 	}
 	host, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
-		log.Println(err)
+		utils.Log(err)
 		return
 	}
 	s.host = host
@@ -94,7 +94,7 @@ func (s *Server) Serve() {
 	// Start running services
 	s.services.ServeServices(host, port, s.openConns)
 
-	log.Printf("Conoid listening on host: %s, port %s\n", host, port)
+	utils.Logf("Conoid listening on host: %s, port %s\n", host, port)
 	// Record connections to ensure it doesn't exceed the max size
 	connsCh := make(chan int, config.MAX_CONN_COUNT)
 
@@ -105,7 +105,7 @@ func (s *Server) Serve() {
 		// Accept connections
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println("Connection failed:", err)
+			utils.Log("Connection failed:", err)
 			// Remove record
 			<-connsCh
 			continue

@@ -3,12 +3,12 @@ package app
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 
 	"github.com/DeeStarks/conoid/app/tools"
 	port "github.com/DeeStarks/conoid/domain/ports"
+	"github.com/DeeStarks/conoid/utils"
 )
 
 type (
@@ -48,7 +48,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 	dbPort := port.NewDomainPort(s.defaultDB)
 	services, err := dbPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
-		log.Println("Could not serve:", err)
+		utils.Log("Could not serve:", err)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 				"listeners": addr,
 			})
 			if err != nil {
-				log.Println("Could not update service state:", err)
+				utils.Log("Could not update service state:", err)
 			}
 			serverAddrs = []string{addr}
 			portNo++ // Increment the port number for nexe usage
@@ -75,7 +75,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			for _, addr := range service.Listeners {
 				_, err := s.ConnectToServer(addr)
 				if err != nil {
-					log.Printf("Could not connect to \"%s\" at: %s; Stopping...\n", service.Name, addr)
+					utils.Logf("Could not connect to \"%s\" at: %s; Stopping...\n", service.Name, addr)
 					// Update service state
 					dbPort.ServiceProcesses().Update(service.Name, map[string]interface{}{
 						"status": 0,
@@ -93,7 +93,7 @@ func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- ne
 			tunnel := tools.NewTunnel(service.Name, connCh)
 			host, err := tunnel.AllocateHost()
 			if err != nil {
-				log.Println("Error opening tunnel. Ensure your device is connected to the internet")
+				utils.Log("Error opening tunnel. Ensure your device is connected to the internet")
 				continue
 			}
 

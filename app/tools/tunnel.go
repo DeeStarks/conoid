@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/DeeStarks/conoid/utils"
 )
 
 type (
@@ -83,7 +84,7 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, connectedAddressCh chan<
 	// Connect to server
 	localConn, err := net.Dial("tcp", conoidServer)
 	if err != nil {
-		log.Println("Error occured while tunneling:", err)
+		utils.Log("Error occured while tunneling:", err)
 		return
 	}
 	// Add to open connections
@@ -93,12 +94,12 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, connectedAddressCh chan<
 	// Parse url
 	pUrl, err := url.Parse(h.Url)
 	if err != nil {
-		log.Println(err)
+		utils.Log(err)
 		return
 	}
 	remoteConn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", pUrl.Host, h.Port))
 	if err != nil {
-		log.Println("Error occured while", err)
+		utils.Log("Error occured while", err)
 		return
 	}
 	// Add to open connections
@@ -122,7 +123,7 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, connectedAddressCh chan<
 				if isClosedConn(err) {
 					return
 				}
-				log.Println(err)
+				utils.Log(err)
 			}
 		}
 	}()
@@ -134,7 +135,7 @@ func (h *allocatedHost) OpenTunnel(conoidServer string, connectedAddressCh chan<
 				if isClosedConn(err) {
 					return
 				}
-				log.Println(err)
+				utils.Log(err)
 			}
 		}
 	}()
