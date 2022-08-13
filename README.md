@@ -38,13 +38,6 @@ brew services start conoid
 
 ## Usage
 
-### Start conoid server
-To start conoid server in the foreground, execute:
-```
-conoid
-```
-Go to http://127.0.0.1:5000 to view the welcome page.
-
 ### List services
 - Running services
 ```
