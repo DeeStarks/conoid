@@ -19,13 +19,22 @@ While you can expose as many local servers as you want, conoid connects to the [
 
 ## Installation
 ### Homebrew
-*[In progress...]*
+**Tap**
+```
+brew tap deestarks/conoid
+```
 
-### Go
+**Install**
 ```
-go install github.com/deestarks/conoid@latest && \
-export PATH=$PATH:$(go env GOPATH)/bin
+brew install conoid
 ```
+
+**Start**
+```
+brew services start conoid
+```
+
+> Confirm conoid is running by going to http://127.0.0.1:5000 on your browser. You should see a welcome page.
 
 ## Usage
 
