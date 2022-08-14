@@ -38,18 +38,7 @@ brew services start conoid
 
 ## Usage
 
-### List services
-- Running services
-```
-conoid ps
-```
-
-- All services
-```
-conoid ps -a
-```
-
-### Expose a local server
+### Expose a local server to the internet
 ```
 conoid add \
     --name <your_app_name> --type server \
@@ -59,18 +48,45 @@ conoid add \
 E.g.
 ```
 conoid add \
-    --name my_app --type server \
-    --listener <your_server_address> --tunnel
+    --name my_app1 --type server \
+    --listener http://127.0.0.1:8080 --tunnel
 ```
+Restart conoid server - `brew services restart conoid`
 
-### Serving static files
+### Serve static files
 ```
 conoid add \
     --name <your_app_name> --type static \
     --directory <document_directory>
 ```
 
-or add the `--tunnel` flag to expose to the internet
+E.g.
+```
+conoid add \
+    --name my_app2 --type static \
+    --directory .
+```
+> To expose to the internet, pass the `--tunnel` flag
+
+Restart conoid server - `brew services restart conoid`
+
+### Show the details of a service
+```
+conoid ps --name <your_app_name>
+```
+
+### List services
+- Running services
+```
+conoid ps
+```
+
+- All services (running and stopped)
+```
+conoid ps -a
+```
+
+
 
 
 Use the help flag `conoid [command] --help` or `-h` for more commands.
