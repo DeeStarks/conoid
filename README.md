@@ -5,7 +5,7 @@
 [![GitHub tag](https://img.shields.io/github/tag/deestarks/conoid.svg)](https://github.com/deestarks/conoid/releases/latest)
 
 
-<img src="./assets/welcome/img/icon.png" width="100">
+<img src="./app/welcome/img/icon.png" width="100">
 
 ---
 
