@@ -1,6 +1,8 @@
 package app
 
 import (
+    "embed"
+    "io/fs"
 	"fmt"
 	"net"
 	"net/http"
@@ -34,21 +36,27 @@ func InitServices() IServices {
 	}
 }
 
+//go:embed welcome
+var welcome embed.FS
+
 // Retrieve all Services and serve
 func (s *Services) ServeServices(conoidHost, conoidPort string, connCh chan<- net.Conn) {
-	// Serve the welcome page
-	welcomeHost, welcomePort := s.ServeStatic("./assets/welcome/", 30000)
+	// Embedding and serving the welcome page
+	fsRoot, _ := fs.Sub(welcome, "welcome")
+	fsWelcome := http.FileServer(http.FS(fsRoot))
+	http.Handle("/", fsWelcome)
+	go http.ListenAndServe("127.0.0.1:30000", nil)
 	// Set the welcome page as the werver's default page
-	s.running[fmt.Sprintf("%s:%s", conoidHost, conoidPort)] = []string{fmt.Sprintf("%s:%s", welcomeHost, welcomePort)}
+	s.running[fmt.Sprintf("%s:%s", conoidHost, conoidPort)] = []string{"127.0.0.1:30000"}
 
-	// Serve registered running services
+	// Retrieve running services
 	dbPort := port.NewDomainPort()
 	services, err := dbPort.ServiceProcesses().RetrieveRunning()
 	if err != nil {
 		utils.Log("Could not serve:", err)
 		return
 	}
-
+	// Start services
 	portNo := 30001
 	for _, service := range services {
 		// Addresses the service is running on
@@ -140,7 +148,7 @@ func (s *Services) ServeStatic(dir string, port int) (string, string) {
 	mux.Handle("/", fs)
 
 	// Get and listen on the next port number
-	host := "localhost"
+	host := "127.0.0.1"
 	// Dial the port number to see if it's available
 	_, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {

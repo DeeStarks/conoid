@@ -7,7 +7,7 @@ import (
 
 const (
 	// App info
-	CURRENT_VERSION = "v0.0.3"
+	CURRENT_VERSION = "v0.0.4"
 
 	// Network
 	TCP_PORT       = 5000
