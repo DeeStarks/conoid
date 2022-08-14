@@ -45,11 +45,8 @@ brews:
         <dict>
           <key>Label</key>
           <string>#{plist_name}</string>
-          <key>ProgramArguments</key>
-          <array>
-            <string>#{opt_bin}/conoid</string>
-            <string>watch</string>
-          </array>
+          <key>Program</key>
+          <string>#{opt_bin}/conoid</string>
           <key>RunAtLoad</key>
           <true/>
           <key>KeepAlive</key>
