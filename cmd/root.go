@@ -16,7 +16,7 @@ import (
 var (
 	rootCmd = &cobra.Command{
 		Use:   "conoid",
-		Short: "Conoid is a reverse proxy server that can also expose your localhost on the internet",
+		Short: "Expose local development servers to the internet and serve static files",
 		Long:  "CONOID:\nA simple HTTP server that can be used to serve static files. \nIt also provides TCP tunnelling through localtunnel to bypass a firewall or NAT,\nenabling local development servers be exposed to the internet.",
 		Run: func(cmd *cobra.Command, args []string) {
 			flags := cmd.Flags()

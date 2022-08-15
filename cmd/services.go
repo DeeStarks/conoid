@@ -163,7 +163,7 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 	startCmd.Flags().StringP("name", "n", "", "name of service to start")
 
-	// Start a stopped service
+	// Stop a running service
 	rootCmd.AddCommand(stopCmd)
 	stopCmd.Flags().StringP("name", "n", "", "name of running service to stop")
 
